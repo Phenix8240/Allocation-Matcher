@@ -1,7 +1,12 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for, session
 import os
 import pandas as pd
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
+ADMIN_USER = os.getenv("ADMIN_USER")
+ADMIN_PASS = os.getenv("ADMIN_PASS")
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -155,7 +160,10 @@ def process_and_compare(enroll_file, alloc_file):
         raise Exception(f"Error processing files: {str(e)}")
 
 # === Flask Routes ===
-
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.form['username']
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
