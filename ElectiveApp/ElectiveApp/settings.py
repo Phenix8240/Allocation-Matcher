@@ -56,7 +56,7 @@ ROOT_URLCONF = "ElectiveApp.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'core', 'templates')],
+        "DIRS": [os.path.join(BASE_DIR, 'core/templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -126,3 +126,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = 'core.User'
 LOGIN_URL = '/login/'
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
+

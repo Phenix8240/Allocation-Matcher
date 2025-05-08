@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -26,44 +26,100 @@
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #34d399;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 50;
+            animation: fadeout 3s ease-in-out forwards;
+        }
+        @keyframes fadeout {
+            0% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; display: none; }
+        }
     </style>
 </head>
 <body class="light min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-800 dark:to-gray-900">
+
+    {% if login_success %}
+    <div class="popup">Login successful! Redirecting...</div>
+    <script>
+        setTimeout(() => {
+            window.location.href = "{% url 'admin_dashboard' %}";
+        }, 2000);
+    </script>
+    {% endif %}
+
     <div class="login-box p-8 rounded-2xl shadow-xl w-full max-w-md">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Login</h2>
             <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-                <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
-                <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                 </svg>
             </button>
         </div>
+
         {% if messages %}
             {% for message in messages %}
                 <p class="text-red-500 dark:text-red-400 mb-4 text-center">{{ message }}</p>
             {% endfor %}
         {% endif %}
-        <form method="post" class="space-y-4">
+
+        <form method="post" class="space-y-6">
             {% csrf_token %}
-            {{ form.as_p }}
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Username</label>
+                <input type="text" id="username" name="username" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div class="relative">
+                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
+                <input type="password" id="password" name="password" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500 pr-10" required>
+                <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 flex items-center pr-3 mt-6">
+                    <svg id="eye-icon" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <svg id="eye-slash-icon" class="w-5 h-5 text-gray-500 dark:text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411L21 21"/>
+                    </svg>
+                </button>
+            </div>
             <button type="submit" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold rounded-lg transition">Login</button>
         </form>
     </div>
+
     <script>
         const toggleButton = document.getElementById('theme-toggle');
         const body = document.body;
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
+        const togglePassword = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eye-icon');
+        const eyeSlashIcon = document.getElementById('eye-slash-icon');
 
-        // Check for saved theme preference
+        // Theme toggle
         if (localStorage.getItem('theme') === 'dark') {
             body.classList.remove('light');
             body.classList.add('dark');
             sunIcon.classList.remove('hidden');
-            moonIcon.classList.add('add');
+            moonIcon.classList.add('hidden');
         }
 
         toggleButton.addEventListener('click', () => {
@@ -71,9 +127,15 @@
             body.classList.toggle('dark');
             sunIcon.classList.toggle('hidden');
             moonIcon.classList.toggle('hidden');
-
-            // Save theme preference
             localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Toggle password visibility
+        togglePassword.addEventListener('click', () => {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            eyeIcon.classList.toggle('hidden');
+            eyeSlashIcon.classList.toggle('hidden');
         });
     </script>
 </body>

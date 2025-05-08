@@ -5,5 +5,5 @@ class UploadFileForm(forms.Form):
     file = forms.FileField()
 
 class LoginForm(AuthenticationForm):
-    username = forms.CharField(max_length=100)
+    username = forms.EmailField(label='Email')
     password = forms.CharField(widget=forms.PasswordInput)
