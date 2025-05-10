@@ -60,7 +60,7 @@ class Student(models.Model):
 class Subject(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, blank=True)
-    semester = models.IntegerField()
+    semester = models.IntegerField(null=False)
     stream = models.CharField(max_length=50)
     is_elective = models.BooleanField(default=False)
 
