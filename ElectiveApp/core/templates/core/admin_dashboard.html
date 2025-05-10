@@ -1,58 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .dark {
-            background-color: #1f2937;
-            color: #f9fafb;
-        }
-        .light {
-            background-color: #f3f4f6;
-            color: #1f2937;
-        }
-        .sidebar {
-            background: rgba(255, 255, 255, 0.1);
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .dark .sidebar {
-            background: rgba(0, 0, 0, 0.3);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .light {
+      background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
+    }
+    .dark {
+      background: linear-gradient(135deg, #1f2937, #374151);
+    }
+    .sidebar {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(229, 231, 235, 0.5);
+    }
+    .dark .sidebar {
+      background: rgba(31, 41, 55, 0.95);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+    }
+    .dark .card {
+      background: rgba(31, 41, 55, 0.95);
+    }
+    .modal-content {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+    }
+    .dark .modal-content {
+      background: rgba(17, 24, 39, 0.98);
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, #3b82f6, #2563eb);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(90deg, #2563eb, #1d4ed8);
+    }
+  </style>
 </head>
-<body class="light flex min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-800 dark:to-gray-900">
-    <div class="sidebar w-64 p-6 flex flex-col h-screen">
-        <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Admin Dashboard</h2>
-        <nav class="space-y-2">
-            <a href="{% url 'admin_upload' %}" class="block py-2 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white transition">Upload Student Excel</a>
-            <a href="{% url 'logout' %}" class="block py-2 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white transition">Logout</a>
-        </nav>
-        <div class="mt-auto pt-4">
-            <button id="theme-toggle" class="w-full py-2 px-4 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-600 transition">Toggle Theme</button>
-        </div>
+<body class="light flex min-h-screen">
+  <!-- Sidebar -->
+  <div class="sidebar w-64 p-6 flex flex-col h-screen sticky top-0">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-8">Admin Dashboard</h2>
+    <nav class="space-y-3 flex-1">
+      <button id="btn-student-details" class="w-full text-left py-3 px-4 rounded-xl bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium transition-all duration-200 shadow-md">Student Details</button>
+      <button id="btn-upload-excel" class="w-full text-left py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-all duration-200 shadow-md">Upload Student Excel</button>
+    </nav>
+    <div class="mt-auto">
+      <button id="theme-toggle" class="p-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover guilty:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 shadow">
+        <svg id="sun-icon" class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <svg id="moon-icon" class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+      </button>
     </div>
+  </div>
 
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        const body = document.body;
+  <!-- Main Content -->
+  <div class="flex-1 p-8 overflow-auto">
+    <!-- Welcome Section -->
+    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Welcome, Admin!</h2>
+    <div class="card p-6 rounded-2xl shadow-lg mb-8">
+      <p class="text-gray-600 dark:text-gray-300 text-lg">
+        Manage your student data with ease. Use the sidebar to upload Excel files or view student details.
+      </p>
+    </div>
+    <div id="content-container" class="card p-8 rounded-2xl shadow-lg min-h-[600px]">
+      <p class="text-gray-600 dark:text-gray-300">Loading content...</p>
+    </div>
+  </div>
 
-        if (localStorage.getItem('theme') === 'dark') {
-            body.classList.remove('light');
-            body.classList.add('dark');
-        }
+  <!-- Modal for Upload Excel -->
+  <div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="modal-content p-8 rounded-2xl w-full max-w-lg relative shadow-2xl">
+      <button id="close-modal" class="absolute top-4 right-4 text-2xl font-bold text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition">×</button>
+      <div id="upload-form-content">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">Upload Student Excel</h1>
+        <form method="POST" enctype="multipart/form-data" class="space-y-6" action="{% url 'upload-student-excel' %}">
+          {% csrf_token %}
+          <input type="file" name="student_file" accept=".xlsx" required class="block w-full text-sm text-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+          <button type="submit" class="w-full btn-primary text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-md">Upload</button>
+        </form>
+        <div class="text-center mt-4">
+          <a href="{% url 'student-details' %}" class="text-blue-500 hover:underline dark:text-blue-400 text-sm font-medium">View Student Details</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark');
-            body.classList.toggle('light');
-            localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
+  <script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    const sunIcon = document.getElementById('sun-icon');
+    const moonIcon = document.getElementById('moon-icon');
+
+    if (localStorage.getItem('theme') === 'dark') {
+      body.classList.remove('light');
+      body.classList.add('dark');
+      sunIcon.classList.remove('hidden');
+      moonIcon.classList.add('hidden');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('light');
+      body.classList.toggle('dark');
+      sunIcon.classList.toggle('hidden');
+      moonIcon.classList.toggle('hidden');
+      localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    function loadContent(url) {
+      fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('content-container').innerHTML = html;
+        })
+        .catch(err => {
+          document.getElementById('content-container').innerHTML = "<p class='text-red-500 dark:text-red-400'>Failed to load content.</p>";
         });
-    </script>
+    }
+
+    function openUploadModal() {
+      document.getElementById('upload-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('btn-student-details').addEventListener('click', () => {
+      loadContent("{% url 'student-details' %}");
+    });
+
+    document.getElementById('btn-upload-excel').addEventListener('click', () => {
+      openUploadModal();
+    });
+
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('upload-modal').classList.add('hidden');
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadContent("{% url 'student-details' %}");
+    });
+  </script>
 </body>
 </html>

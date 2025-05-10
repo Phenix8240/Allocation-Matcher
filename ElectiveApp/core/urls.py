@@ -2,10 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.login_view, name='login'),  # Redirect root to login view
-    path('login/', views.login_view, name='login'),
-    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path('admin/upload/', views.admin_upload, name='admin_upload'),
-    path('student/dashboard/',views.admin_dashboard , name='admin_dashboard'),  # Add this when ready
-    # path('logout/', views.logout_view, name='logout'),  # Optional, but useful
+    path('', views.login_view, name='login'),
+    path('student-dashboard/', views.student_dashboard, name='student_dashboard'),
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('upload-student-excel/', views.upload_student_excel, name='upload-student-excel'),
+    path('student-details/', views.student_details, name='student-details'),
+    path('logout/', views.logout_view, name='logout'),
 ]

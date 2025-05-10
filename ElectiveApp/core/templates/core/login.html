@@ -48,13 +48,32 @@
 </head>
 <body class="light min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-800 dark:to-gray-900">
 
+    <!-- Success message on successful login -->
     {% if login_success %}
     <div class="popup">Login successful! Redirecting...</div>
     <script>
+        // Display notification if supported by browser
+        if (Notification.permission === "granted") {
+            new Notification("Login Successful!", {
+                body: "You are being redirected.",
+                icon: "/path/to/icon.png" // Customize this path if needed
+            });
+        }
+
+        // Set a timeout for redirection after 2 seconds
         setTimeout(() => {
             window.location.href = "{% url 'admin_dashboard' %}";
         }, 2000);
     </script>
+    {% endif %}
+
+    <!-- Failure message on login error -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="popup bg-red-500">
+            {{ message }}
+        </div>
+        {% endfor %}
     {% endif %}
 
     <div class="login-box p-8 rounded-2xl shadow-xl w-full max-w-md">
@@ -72,13 +91,7 @@
             </button>
         </div>
 
-        {% if messages %}
-            {% for message in messages %}
-                <p class="text-red-500 dark:text-red-400 mb-4 text-center">{{ message }}</p>
-            {% endfor %}
-        {% endif %}
-
-        <form method="post" class="space-y-6">
+        <form method="post" class="space-y-6" action="{% url 'login' %}">
             {% csrf_token %}
             <div>
                 <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Username</label>
