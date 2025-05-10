@@ -56,3 +56,13 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.user.email} — {self.roll or 'no roll'}"
+
+class Subject(models.Model):
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=20, blank=True)
+    semester = models.IntegerField()
+    stream = models.CharField(max_length=50)
+    is_elective = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.name} - sem {self.semester}"
