@@ -1,542 +1,204 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elective Selection Form</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3a0ca3;
-            --accent-color: #4cc9f0;
-            --dark-color: #2b2d42;
-            --light-color: #f8f9fa;
-            --success-color: #2ecc71;
-            --warning-color: #f8961e;
-        }
-        
-        body {
-            background-color: #f0f2f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--dark-color);
-        }
-        
-        .form-container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        }
-        
-        .form-header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: var(--dark-color);
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .form-header h2 {
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        
-        .form-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 25%;
-            width: 50%;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-            border-radius: 3px;
-        }
-        
-        .form-section {
-            margin-bottom: 25px;
-            padding: 25px;
-            border-radius: 12px;
-            background-color: white;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            transition: all 0.3s ease;
-        }
-        
-        .form-section:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transform: translateY(-2px);
-        }
-        
-        .form-section h3 {
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-        
-        .form-section h3 i {
-            margin-right: 10px;
-            color: var(--accent-color);
-        }
-        
-        .elective-option {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            padding: 15px;
-            background: var(--light-color);
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        
-        .elective-option:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            border-color: var(--accent-color);
-        }
-        
-        .elective-option input[type="radio"]:checked + label {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        
-        .btn-submit {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            padding: 12px 30px;
-            font-size: 18px;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 20px;
-            border-radius: 8px;
-            color: white;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-        }
-        
-        .btn-submit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
-        }
-        
-        .selector-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .selector-btn {
-            margin: 0;
-            padding: 10px 25px;
-            border: 2px solid var(--primary-color);
-            background: white;
-            color: var(--primary-color);
-            font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            min-width: 120px;
-            text-align: center;
-        }
-        
-        .selector-btn:hover {
-            background: rgba(67, 97, 238, 0.1);
-        }
-        
-        .selector-btn.active {
-            background: var(--primary-color);
-            color: white;
-            box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
-        }
-        
-        .semester-section {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .semester-section.active {
-            display: block;
-        }
-        
-        .course-code {
-            display: inline-block;
-            background: var(--primary-color);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            margin-right: 10px;
-            font-size: 0.9em;
-        }
-        
-        .credits {
-            font-size: 0.85em;
-            color: #6c757d;
-            margin-left: 10px;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .input-icon {
-            position: relative;
-        }
-        
-        .input-icon i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--primary-color);
-        }
-        
-        .input-icon input {
-            padding-left: 40px;
-        }
-        
-        @media (max-width: 768px) {
-            .form-container {
-                padding: 20px;
-                margin: 15px;
-            }
-            
-            .selector-container {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .selector-btn {
-                width: 100%;
-            }
-        }
-    </style>
+    <title>Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="form-container">
-            <div class="form-header">
-                <h2><i class="fas fa-book-open"></i> Elective Subject Selection</h2>
-                <p>Select your preferred electives for the upcoming semester</p>
-            </div>
-            
-            <form method="POST" id="electiveForm">
-                {% csrf_token %}
-                
-                <!-- Student Information Section -->
-                <div class="form-section">
-                    <h3><i class="fas fa-user-graduate"></i> Student Information</h3>
-                    <div class="row mb-3">
-                        <div class="col-md-6 mb-3">
-                            <div class="input-icon">
-                                <i class="fas fa-user"></i>
-                                <input type="text" class="form-control" id="studentName" name="student_name" placeholder="Full Name" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="input-icon">
-                                <i class="fas fa-id-card"></i>
-                                <input type="text" class="form-control" id="rollNumber" name="roll_number" placeholder="University Roll Number" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="input-icon">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="input-icon">
-                                <i class="fas fa-phone"></i>
-                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number" required>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Year Selection -->
-                <div class="form-section">
-                    <h3><i class="fas fa-calendar-alt"></i> Academic Year</h3>
-                    <div class="selector-container">
-                        <button type="button" class="selector-btn" data-year="3">
-                            <i class="fas fa-chevron-circle-right"></i> 3rd Year
-                        </button>
-                        <button type="button" class="selector-btn active" data-year="4">
-                            <i class="fas fa-chevron-circle-right"></i> 4th Year
-                        </button>
-                    </div>
-                    <input type="hidden" id="selectedYear" name="year" value="4">
-                </div>
-                
-                <!-- Semester Selection -->
-                <div class="form-section" id="semesterSelection">
-                    <h3><i class="fas fa-calendar-week"></i> Select Semester</h3>
-                    <div class="selector-container" id="semesterButtons">
-                        <!-- Buttons will be populated by JavaScript -->
-                    </div>
-                    <input type="hidden" id="selectedSemester" name="semester">
-                </div>
-                
-                <!-- Electives Sections -->
-                <div id="electivesContainer">
-                    <!-- Content will be populated by JavaScript -->
-                </div>
-                
-                <button type="submit" class="btn btn-submit">
-                    <i class="fas fa-paper-plane"></i> Submit Elective Choices
-                </button>
-            </form>
-        </div>
+<body class="bg-gray-100">
+    <!-- Sidebar (Fixed) -->
+    <div class="fixed top-0 left-0 w-64 h-screen bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col">
+        <div class="p-4 text-xl font-bold">Student Portal</div>
+        <nav class="flex-1 overflow-y-auto">
+            {% if not electives_saved %}
+                <a href="#" id="dashboard-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </a>
+            {% endif %}
+            <a href="#" id="core-subjects-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                Core Subjects
+            </a>
+            <a href="#" id="electives-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Choose Electives
+            </a>
+        </nav>
+        <a href="{% url 'logout' %}" class="p-4 hover:bg-blue-700 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            Logout
+        </a>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Elective data structure
-        const electivesData = {
-            "3": {
-                "5": {
-                    "Professional Elective (PEC-IT501X)": [
-                        {
-                            code: "PEC-IT501B",
-                            name: "Artificial Intelligence"
-                        },
-                        {
-                            code: "PEC-IT501D",
-                            name: "Computer Graphics"
-                        }
-                    ]
-                },
-                "6": {
-                    "Professional Elective II": [
-                        {
-                            code: "PEC-IT601B",
-                            name: "Distributed Systems"
-                        },
-                        {
-                            code: "PEC-IT601D",
-                            name: "Image Processing"
-                        }
-                    ],
-                    "Professional Elective III": [
-                        {
-                            code: "PEC-IT602B",
-                            name: "Data Warehousing and Data Mining"
-                        },
-                        {
-                            code: "PEC-IT602D",
-                            name: "Pattern Recognition"
-                        }
-                    ],
-                    "Open Elective I": [
-                        {
-                            code: "OEC-IT601A",
-                            name: "Numerical Methods"
-                        },
-                        {
-                            code: "OEC-IT601B",
-                            name: "HRD & Organizational Behavior"
-                        }
-                    ]
-                }
-            },
-            "4": {
-                "7": {
-                    "Professional Elective IV (PEC-IT7XX)": [
-                        {
-                            code: "PEC-IT701C",
-                            name: "Cloud Computing"
-                        },
-                        {
-                            code: "PEC-IT701D",
-                            name: "Machine Learning"
-                        }
-                    ],
-                    "Professional Elective IV (PEC-IT7XX)": [
-                        {
-                            code: "PEC-IT702B",
-                            name: "Neural Networks and Deep Learning"
-                        },
-                        {
-                            code: "PEC-IT702F",
-                            name: "Cyber Security"
-                        }
-                    ],
-                    "Open Elective II (OEC-IT7XX)": [
-                        {
-                            code: "OEC-IT701A",
-                            name: "Operations Research"
-                        },
-                        {
-                            code: "OEC-IT701C",
-                            name: "Soft Skills & Interpersonal Communication"
-                        }
-                    ]
-                },
-                "8": {
-                    "Professional Elective VI (PEC-IT801X)": [
-                        {
-                            code: "PEC-IT801B",
-                            name: "Cryptography and Network Security"
-                        },
-                        {
-                            code: "PEC-IT801C",
-                            name: "Natural Language Processing"
-                        }
-                    ],
-                    "Open Elective III (OEC-IT801X)": [
-                        {
-                            code: "OEC-IT801B",
-                            name: "Cyber Law and Ethics"
-                        },
-                        {
-                            code: "OEC-IT801D",
-                            name: "Bio Informatics"
-                        }
-                    ],
-                    "Open Elective V (OEC-IT802X)": [
-                        {
-                            code: "OEC-IT802A",
-                            name: "E-Commerce & ERP"
-                        },
-                        {
-                            code: "OEC-IT802C",
-                            name: "Economic Policies in India"
-                        }
-                    ]
-                }
-            }
-        };
+    <!-- Header (Fixed) -->
+    <header class="fixed top-0 left-64 right-0 h-16 bg-white shadow flex justify-between items-center px-4 border-b border-gray-200">
+        <div>
+            <h1 class="text-xl font-bold text-blue-600">
+                Welcome, <span id="welcome-name"></span>
+            </h1>
+            {% if student.roll %}
+                <p class="text-sm text-gray-600">Roll: {{ student.roll }}</p>
+            {% endif %}
+        </div>
+        <div class="text-right">
+            <p class="text-gray-800">{{ student.user.email }}</p>
+            <p class="text-sm text-gray-600">{{ student.get_department_display }} | Semester {{ student.semester }}</p>
+        </div>
+    </header>
 
-        // DOM elements
-        const yearButtons = document.querySelectorAll('.selector-btn[data-year]');
-        const semesterSelection = document.getElementById('semesterSelection');
-        const semesterButtonsContainer = document.getElementById('semesterButtons');
-        const electivesContainer = document.getElementById('electivesContainer');
-        const selectedYearInput = document.getElementById('selectedYear');
-        const selectedSemesterInput = document.getElementById('selectedSemester');
-
-        // Initialize form
-        document.addEventListener('DOMContentLoaded', function() {
-            updateSemesterButtons(4);
-            renderElectives(4, '7');
-        });
-
-        // Year selection handler
-        yearButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                // Update active state
-                yearButtons.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Get selected year
-                const year = this.dataset.year;
-                selectedYearInput.value = year;
-                
-                // Update semester buttons
-                updateSemesterButtons(year);
-                
-                // Clear any existing semester selection
-                selectedSemesterInput.value = '';
-                document.querySelectorAll('.semester-btn').forEach(b => b.classList.remove('active'));
-                
-                // Hide electives until semester is selected
-                electivesContainer.innerHTML = '';
-            });
-        });
-
-        // Update semester buttons based on selected year
-        function updateSemesterButtons(year) {
-            semesterButtonsContainer.innerHTML = '';
-            
-            const semesters = Object.keys(electivesData[year]);
-            
-            semesters.forEach(sem => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'selector-btn semester-btn';
-                btn.dataset.sem = sem;
-                btn.innerHTML = `<i class="fas fa-calendar-day"></i> ${ordinalSuffix(sem)} Semester`;
-                
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.semester-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    selectedSemesterInput.value = sem;
-                    renderElectives(year, sem);
-                });
-                
-                semesterButtonsContainer.appendChild(btn);
-            });
-            
-            // Auto-select first semester if only one exists
-            if (semesters.length === 1) {
-                const firstBtn = semesterButtonsContainer.querySelector('.semester-btn');
-                firstBtn.click();
-            }
-        }
-
-        // Render electives for selected year and semester
-        function renderElectives(year, semester) {
-            electivesContainer.innerHTML = '';
-            
-            const semesterData = electivesData[year][semester];
-            let sectionCount = 1;
-            
-            for (const [category, courses] of Object.entries(semesterData)) {
-                const section = document.createElement('div');
-                section.className = 'form-section semester-section active';
-                section.id = `sem${semester}Section`;
-                
-                let html = `<h3><i class="fas fa-book"></i> ${category}</h3>`;
-                
-                courses.forEach((course, index) => {
-                    const inputId = `elective-${year}-${semester}-${sectionCount}-${index}`;
-                    html += `
-                    <div class="elective-option" onclick="document.getElementById('${inputId}').checked = true">
-                        <input class="form-check-input" type="radio" 
-                               id="${inputId}" 
-                               name="elective_${sectionCount}" 
-                               value="${course.code}" required>
-                        <label class="form-check-label ms-2" for="${inputId}">
-                            <span class="course-code">${course.code}</span>
-                            ${course.name}
-                        </label>
+    <!-- Main Content (Scrollable) -->
+    <main class="ml-64 mt-16 p-6 bg-gray-50" style="height: calc(100vh - 4rem); overflow-y: auto;">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="p-2 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded">
+                        {{ message }}
                     </div>
-                    `;
-                });
-                
-                section.innerHTML = html;
-                electivesContainer.appendChild(section);
-                sectionCount++;
-            }
-        }
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div id="content-area" class="hidden">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">Dashboard</h2>
+            <p class="text-gray-700">Welcome to your student portal. Use the sidebar to view core subjects or choose electives.</p>
+        </div>
+        <!-- Core Subjects Section -->
+        <div id="core-subjects-section" class="hidden">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">Core Subjects</h2>
+            <div id="core-subjects-list" class="grid grid-cols-1 gap-4"></div>
+        </div>
+        <!-- Electives Section -->
+        <div id="electives-panel" class="hidden">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">Electives</h2>
+            <div id="electives-content" class="space-y-4"></div>
+        </div>
+    </main>
 
-        // Helper function for ordinal numbers
-        function ordinalSuffix(num) {
-            const j = num % 10;
-            const k = num % 100;
-            if (j == 1 && k != 11) {
-                return num + "st";
+    <script>
+        $(document).ready(function() {
+            // Extract and display the name in the welcome message
+            const email = '{{ student.user.email }}';
+            const name = email.split('@')[0].split('.')[1];
+            const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+            $('#welcome-name').text(capitalizedName);
+
+            // Function to show core subjects
+            function showCoreSubjects() {
+                $.get('{% url 'fetch_core_subjects' %}', function(data) {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    let html = '';
+                    data.core_subjects.forEach(subject => {
+                        html += `
+                            <div class="p-4 bg-white shadow-md rounded-lg">
+                                <h3 class="font-bold text-gray-800">${subject.code}</h3>
+                                <p class="text-gray-700">${subject.name}</p>
+                                <p class="text-sm text-gray-500">Stream: ${subject.stream}</p>
+                            </div>
+                        `;
+                    });
+                    $('#core-subjects-list').html(html);
+                });
             }
-            if (j == 2 && k != 12) {
-                return num + "nd";
+
+            // Function to show electives
+            function showElectives(mode = '') {
+                $.get('{% url 'fetch_electives' %}?mode=' + mode, function(data) {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    let html = '';
+                    if (data.chosen) {
+                        html += '<h3 class="font-bold mb-2 text-gray-800">Chosen Electives</h3>';
+                        data.chosen.forEach(subject => {
+                            html += `
+                                <div class="p-4 bg-white shadow-md rounded-lg">
+                                    <h4 class="font-bold text-gray-800">${subject.code}</h4>
+                                    <p class="text-gray-700">${subject.name}</p>
+                                    <p class="text-sm text-gray-500">Stream: ${subject.stream}</p>
+                                </div>
+                            `;
+                        });
+                        html += '<button id="edit-electives" class="mt-4 bg-green-600 text-white p-2 rounded-md hover:bg-green-700">Edit Choices</button>';
+                    } else {
+                        html += '<h3 class="font-bold mb-2 text-gray-800">Choose Electives</h3>';
+                        for (let stream in data.electives) {
+                            html += `<div class="mb-4"><h4 class="font-semibold text-gray-700">${stream}</h4>`;
+                            data.electives[stream].forEach(subject => {
+                                let checked = data.selected.includes(subject.code) ? 'checked' : '';
+                                html += `
+                                    <div class="flex items-center">
+                                        <input type="checkbox" class="elective-checkbox mr-2" value="${subject.code}" ${checked}>
+                                        <label class="text-gray-700">${subject.code}: ${subject.name}</label>
+                                    </div>
+                                `;
+                            });
+                            html += '</div>';
+                        }
+                        html += '<button id="save-electives" class="mt-4 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Save Selections</button>';
+                    }
+                    $('#electives-content').html(html);
+                });
             }
-            if (j == 3 && k != 13) {
-                return num + "rd";
-            }
-            return num + "th";
-        }
+
+            // Sidebar link handlers
+            $('#dashboard-link').click(function(e) {
+                e.preventDefault();
+                $('#core-subjects-section, #electives-panel').addClass('hidden');
+                $('#content-area').removeClass('hidden');
+            });
+
+            $('#core-subjects-link').click(function(e) {
+                e.preventDefault();
+                $('#content-area, #electives-panel').addClass('hidden');
+                $('#core-subjects-section').removeClass('hidden');
+                showCoreSubjects();
+            });
+
+            $('#electives-link').click(function(e) {
+                e.preventDefault();
+                $('#content-area, #core-subjects-section').addClass('hidden');
+                $('#electives-panel').removeClass('hidden');
+                showElectives();
+            });
+
+            // Handle save electives with confirmation
+            $(document).on('click', '#save-electives', function() {
+                if (confirm("Are you sure you want to save your elective choices?")) {
+                    let selected_codes = $('.elective-checkbox:checked').map(function() {
+                        return this.value;
+                    }).get();
+                    $.ajax({
+                        url: '{% url 'save_elective_selection' %}',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ selected_codes: selected_codes }),
+                        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                        success: function(response) {
+                            alert(response.message);
+                            window.location.reload();
+                        },
+                        error: function(xhr) {
+                            alert(xhr.responseJSON.error);
+                        }
+                    });
+                }
+            });
+
+            // Handle edit electives
+            $(document).on('click', '#edit-electives', function() {
+                showElectives('edit');
+            });
+
+            // Show core subjects by default
+            $('#core-subjects-link').click();
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold mb-4 text-center">Complete Your Profile</h2>
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="p-2 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="department" class="block text-sm font-medium text-gray-700">Department *</label>
+                    <select name="department" id="department" class="mt-1 block w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select Department</option>
+                        {% for value, label in departments %}
+                            <option value="{{ value }}" {% if student.department == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="semester" class="block text-sm font-medium text-gray-700">Semester *</label>
+                    <select name="semester" id="semester" class="mt-1 block w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select Semester</option>
+                        {% for value, label in semesters %}
+                            <option value="{{ value }}" {% if student.semester == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="roll" class="block text-sm font-medium text-gray-700">Roll Number</label>
+                    <input type="text" name="roll" id="roll" 
+                           value="{{ student.roll|default:'' }}"
+                           class="mt-1 block w-full p-2 border rounded-md"
+                           placeholder="Optional">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">
+                    Save and Continue
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
