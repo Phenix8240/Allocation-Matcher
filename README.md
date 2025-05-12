@@ -63,7 +63,7 @@ View matched and mismatched electives
 
 🚀 Getting Started
 # Clone the repo
-git clone 
+git clone git@github.com:Phenix8240/Allocation-Matcher.git
 cd elective-matcher
 
 # Activate virtualenv
