@@ -114,7 +114,7 @@ def login_view(request):
 @login_required
 def student_dashboard(request):
     student = request.user.student
-    if not student.department or not student.semester:
+    if not student.department or not student.semester or not student.roll:
         return redirect('select_department_semester')
     
     return render(request, 'core/student_dashboard.html', {
@@ -168,6 +168,8 @@ def select_department_semester(request):
         'departments': Student._meta.get_field('department').choices,
         'semesters': Student._meta.get_field('semester').choices,
     })
+
+
 @login_required
 def fetch_core_subjects(request):
     student = request.user.student

@@ -9,6 +9,41 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="bg-gray-100">
+    <!-- Status Modal -->
+    <div id="status-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div class="text-center">
+                <div class="mx-auto mb-4">
+                    {% if electives_saved %}
+                        <svg class="w-12 h-12 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    {% else %}
+                        <svg class="w-12 h-12 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    {% endif %}
+                </div>
+                <h3 class="text-lg font-medium mb-2">
+                    {% if electives_saved %}
+                        Electives Submitted!
+                    {% else %}
+                        Electives Pending
+                    {% endif %}
+                </h3>
+                <p class="text-gray-600 mb-4">
+                    {% if electives_saved %}
+                        Your elective selections have been successfully submitted.
+                    {% else %}
+                        Please submit your elective choices before the deadline.
+                    {% endif %}
+                </p>
+                <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
     <!-- Sidebar (Fixed) -->
     <div class="fixed top-0 left-0 w-64 h-screen bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col">
         <div class="p-4 text-xl font-bold">Student Portal</div>
@@ -35,15 +70,16 @@
     </div>
 
     <!-- Header (Fixed) -->
-    <header class="fixed top-0 left-64 right-0 h-16 bg-white shadow flex justify-between items-center px-4 border-b border-gray-200">
+    <header class="fixed top-2 left-[264px] right-2  h-[94px] bg-white shadow flex justify-between items-center px-4 border-b border-gray-200 rounded-lg">
         <div>
-            <h1 class="text-xl font-bold text-blue-600">
+            <h1 class="text-xl font-bold text-blue-700">
                 Welcome, <span id="welcome-name"></span>
             </h1>
             {% if student.roll %}
                 <p class="text-sm text-gray-600">Roll: {{ student.roll }}</p>
             {% endif %}
         </div>
+        <!-- Add this updated right-side section -->
         <div class="text-right">
             <p class="text-gray-800">{{ student.user.email }}</p>
             <p class="text-sm text-gray-600">{{ student.get_department_display }} | Semester {{ student.semester }}</p>
@@ -51,7 +87,8 @@
     </header>
 
     <!-- Main Content (Scrollable) -->
-    <main class="ml-64 mt-16 p-6 bg-gray-50" style="height: calc(100vh - 4rem); overflow-y: auto;">
+    <main class="ml-64 mt-16 p-6 bg-gray-50 mt-[95px]" style="height: calc(100vh - 4rem); overflow-y: auto;">
+
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -78,13 +115,32 @@
     </main>
 
     <script>
+        // CSRF Token Handling
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+    
+        // Auto-show modal after 1 second
+        setTimeout(() => {
+            if(!sessionStorage.getItem('modalClosed')) {
+                document.getElementById('status-modal').classList.remove('hidden');
+            }
+        }, 1000);
+    
+        function closeModal() {
+            document.getElementById('status-modal').classList.add('hidden');
+            sessionStorage.setItem('modalClosed', 'true');
+        }
+    
         $(document).ready(function() {
             // Extract and display the name in the welcome message
             const email = '{{ student.user.email }}';
             const name = email.split('@')[0].split('.')[1];
             const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
             $('#welcome-name').text(capitalizedName);
-
+    
             // Function to show core subjects
             function showCoreSubjects() {
                 $.get('{% url 'fetch_core_subjects' %}', function(data) {
@@ -98,14 +154,14 @@
                             <div class="p-4 bg-white shadow-md rounded-lg">
                                 <h3 class="font-bold text-gray-800">${subject.code}</h3>
                                 <p class="text-gray-700">${subject.name}</p>
-                                <p class="text-sm text-gray-500">Stream: ${subject.stream}</p>
+                                <p class="text-sm text-gray-500">${subject.stream === "Core CS" ? "Theory" : "Labratory"} Subject</p>
                             </div>
                         `;
                     });
                     $('#core-subjects-list').html(html);
                 });
             }
-
+    
             // Function to show electives
             function showElectives(mode = '') {
                 $.get('{% url 'fetch_electives' %}?mode=' + mode, function(data) {
@@ -146,40 +202,48 @@
                     $('#electives-content').html(html);
                 });
             }
-
+    
             // Sidebar link handlers
             $('#dashboard-link').click(function(e) {
                 e.preventDefault();
                 $('#core-subjects-section, #electives-panel').addClass('hidden');
                 $('#content-area').removeClass('hidden');
             });
-
+    
             $('#core-subjects-link').click(function(e) {
                 e.preventDefault();
                 $('#content-area, #electives-panel').addClass('hidden');
                 $('#core-subjects-section').removeClass('hidden');
                 showCoreSubjects();
             });
-
+    
             $('#electives-link').click(function(e) {
                 e.preventDefault();
                 $('#content-area, #core-subjects-section').addClass('hidden');
                 $('#electives-panel').removeClass('hidden');
                 showElectives();
             });
-
+    
             // Handle save electives with confirmation
             $(document).on('click', '#save-electives', function() {
                 if (confirm("Are you sure you want to save your elective choices?")) {
+                    const csrftoken = getCookie('csrftoken');
                     let selected_codes = $('.elective-checkbox:checked').map(function() {
                         return this.value;
                     }).get();
+                    
                     $.ajax({
                         url: '{% url 'save_elective_selection' %}',
                         type: 'POST',
                         contentType: 'application/json',
-                        data: JSON.stringify({ selected_codes: selected_codes }),
-                        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                        data: JSON.stringify({ 
+                            selected_codes: selected_codes,
+                            csrfmiddlewaretoken: csrftoken  // Additional security
+                        }),
+                        headers: { 
+                            'X-CSRFToken': csrftoken,
+                            'Content-Type': 'application/json'
+                        },
                         success: function(response) {
                             alert(response.message);
                             window.location.reload();
@@ -190,15 +254,34 @@
                     });
                 }
             });
-
+    
             // Handle edit electives
             $(document).on('click', '#edit-electives', function() {
                 showElectives('edit');
             });
-
+    
             // Show core subjects by default
             $('#core-subjects-link').click();
         });
+        // Auto-show modal after 1 second
+        setTimeout(() => {
+            if (!sessionStorage.getItem('modalClosed')) {
+                const modal = document.getElementById('status-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex'); // Add flex display
+                }
+            }
+        }, 1000);
+
+        function closeModal() {
+            const modal = document.getElementById('status-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                sessionStorage.setItem('modalClosed', 'true');
+            }
+        }
     </script>
 </body>
 </html>
