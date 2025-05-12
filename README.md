@@ -63,7 +63,7 @@ View matched and mismatched electives
 
 🚀 Getting Started
 # Clone the repo
-git clone https://github.com/your-username/elective-matcher.git
+git clone 
 cd elective-matcher
 
 # Activate virtualenv
