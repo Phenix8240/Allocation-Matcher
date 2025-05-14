@@ -1,0 +1,33 @@
+<div class="p-4">
+    <h2 class="text-2xl font-bold mb-4">Allocation Results for Semester {{ semester }}</h2>
+    <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+      <thead>
+        <tr class="bg-gray-100 dark:bg-gray-700">
+          <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Roll No.</th>
+          <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Name</th>
+          <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Stream</th>
+          <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Chosen Subject</th>
+          <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Allocated Subject</th>
+          <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Match</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for result in results %}
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.student.roll }}</td>
+            <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.student.user.get_full_name }}</td>
+            <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.stream }}</td>
+            <td class="py-3 px-4 border-b text-gray-900 dark:text-white">
+              {% if result.chosen_subject %}{{ result.chosen_subject.code }} - {{ result.chosen_subject.name }}{% else %}Not chosen{% endif %}
+            </td>
+            <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.allocated_subject.code }} - {{ result.allocated_subject.name }}</td>
+            <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.is_match|yesno:"Yes,No" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="py-3 px-4 text-center text-gray-500 dark:text-gray-400">No allocation results found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>

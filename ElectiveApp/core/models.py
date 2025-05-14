@@ -189,3 +189,48 @@ class ElectiveSelection(models.Model):
         unique_together = ('student', 'subject')
         verbose_name = _("Elective Selection")
         verbose_name_plural = _("Elective Selections")
+
+class AllocationResult(models.Model):
+    semester = models.CharField(
+        max_length=10,
+        help_text=_("Semester for which the allocation is made.")
+    )
+    student = models.ForeignKey(
+        'Student',
+        on_delete=models.CASCADE,
+        related_name='allocation_results',
+        help_text=_("Student for whom the allocation is made.")
+    )
+    stream = models.CharField(
+        max_length=50,
+        help_text=_("Elective group or stream (e.g., Professional Elective VI).")
+    )
+    chosen_subject = models.ForeignKey(
+        'Subject',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='chosen_in_allocations',
+        help_text=_("Subject chosen by the student for this stream.")
+    )
+    allocated_subject = models.ForeignKey(
+        'Subject',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='allocated_in_allocations',
+        help_text=_("Subject allocated to the student for this stream.")
+    )
+    is_match = models.BooleanField(
+        default=False,
+        help_text=_("Indicates if the chosen and allocated subjects match.")
+    )
+
+    class Meta:
+        unique_together = ('semester', 'student', 'stream')
+        verbose_name = _("Allocation Result")
+        verbose_name_plural = _("Allocation Results")
+
+    def __str__(self):
+        return f"{self.student.roll} - Sem {self.semester} - {self.stream}"
+

@@ -46,6 +46,10 @@
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                 Choose Electives
             </a>
+            <a href="#" id="allocation-results-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01"></path></svg>
+                Allocation Results
+            </a>
         </nav>
         <a href="{% url 'logout' %}" class="p-4 hover:bg-blue-700 rounded-lg flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
@@ -95,6 +99,46 @@
         <div id="electives-panel" class="hidden">
             <h2 class="text-2xl font-bold mb-4 text-blue-600">Electives</h2>
             <div id="electives-content" class="space-y-4"></div>
+        </div>
+        <!-- Allocation Results Section -->
+        <div id="allocation-results-section" class="hidden">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">Your Subject Allocations</h2>
+            {% if allocation_results %}
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stream</th>
+                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chosen Subject</th>
+                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Allocated Subject</th>
+                                <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Match</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for result in allocation_results %}
+                                <tr>
+                                    <td class="py-4 px-6 text-sm text-gray-900">{{ result.stream }}</td>
+                                    <td class="py-4 px-6 text-sm text-gray-900">
+                                        {% if result.chosen_subject %}
+                                            {{ result.chosen_subject.code }} - {{ result.chosen_subject.name }}
+                                        {% else %}
+                                            Not chosen
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-4 px-6 text-sm text-gray-900">
+                                        {{ result.allocated_subject.code }} - {{ result.allocated_subject.name }}
+                                    </td>
+                                    <td class="py-4 px-6 text-sm text-gray-900">
+                                        {{ result.is_match|yesno:"Yes,No" }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-700">No allocation results available yet.</p>
+            {% endif %}
         </div>
     </main>
 
@@ -238,24 +282,28 @@
             // Sidebar link handlers
             $('#dashboard-link').click(function(e) {
                 e.preventDefault();
-                $('#core-subjects-section, #electives-panel').addClass('hidden');
+                $('#core-subjects-section, #electives-panel, #allocation-results-section').addClass('hidden');
                 $('#content-area').removeClass('hidden');
             });
     
             $('#core-subjects-link').click(function(e) {
                 e.preventDefault();
-                $('#content-area, #electives-panel').addClass('hidden');
+                $('#content-area, #electives-panel, #allocation-results-section').addClass('hidden');
                 $('#core-subjects-section').removeClass('hidden');
                 showCoreSubjects();
             });
     
             $('#electives-link').click(function(e) {
                 e.preventDefault();
-                $('#content-area, #core-subjects-section').addClass('hidden');
+                $('#content-area, #core-subjects-section, #allocation-results-section').addClass('hidden');
                 $('#electives-panel').removeClass('hidden');
                 showElectives();
             });
-    
+            $('#allocation-results-link').click(function(e) {
+                e.preventDefault();
+                $('#content-area, #core-subjects-section, #electives-panel').addClass('hidden');
+                $('#allocation-results-section').removeClass('hidden');
+            });
             // Handle edit electives
             $(document).on('click', '#edit-electives', function() {
                 showElectives('edit');
