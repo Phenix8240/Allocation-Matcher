@@ -12,6 +12,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.http import JsonResponse
 from .forms import UploadFileForm
+from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, Subject, ElectiveSelection
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -280,11 +281,8 @@ def save_elective_selection(request):
         return JsonResponse({'error': str(e)}, status=400)
 
 
-@login_required
+@staff_member_required
 def student_choices(request):
-    """Render a page listing all semesters with view and download options."""
-    if not request.user.is_staff:
-        return redirect('student_dashboard')
     semesters = [choice[0] for choice in Student._meta.get_field('semester').choices]
     return render(request, 'core/student_choices.html', {'semesters': semesters})
 
