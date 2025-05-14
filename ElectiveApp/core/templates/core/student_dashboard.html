@@ -176,7 +176,8 @@
                                 const isChecked = data.selected.includes(subject.code);
                                 html += `
                                     <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
-                                        <input type="checkbox" class="elective-checkbox mr-2" 
+                                        <input type="radio" class="elective-checkbox mr-2" 
+                                               name="${stream}" 
                                                value="${subject.code}" ${isChecked ? 'checked' : ''}>
                                         <span class="text-gray-800">${subject.code} - ${subject.name}</span>
                                     </label>

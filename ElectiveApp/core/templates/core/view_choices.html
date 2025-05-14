@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <div>
     <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Elective Choices for Semester {{ semester }}</h2>
     {% if message %}
@@ -18,7 +19,7 @@
               <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ row.roll }}</td>
                 {% for stream in streams %}
-                  <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ row[stream] }}</td>
+                  <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ row|get_item:stream }}</td>
                 {% endfor %}
               </tr>
             {% endfor %}
