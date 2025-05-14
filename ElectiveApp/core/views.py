@@ -373,7 +373,6 @@ def clean_subject_code(value):
     value = str(value).strip()
     match = re.match(r'^([A-Z0-9-]+)', value)
     return match.group(1) if match else None
-
 def find_roll_column(columns):
     roll_patterns = [
         r'roll\s*(number|no\.?|num)?\s*(id)?',
@@ -398,59 +397,66 @@ def upload_allocation(request):
             allocation_file = request.FILES['allocation_file']
             
             try:
+                # Read Excel file with all data as strings and fill NaN with empty strings
                 df = pd.read_excel(allocation_file, dtype=str).fillna('')
-                df.columns = df.columns.str.strip()
-                
-                # Normalize roll numbers to integers (handles 001 vs 1)
-                roll_column = find_roll_column(df.columns)
-                df[roll_column] = df[roll_column].apply(lambda x: str(int(float(x))) if roll_column else None)
-                
-                # Identify elective columns dynamically
-                elective_columns = [col for col in df.columns if col != roll_column]
-                
+                df.columns = [col.strip() for col in df.columns]
+
+                # Dynamically find roll number column
+                roll_col = find_roll_column(df.columns)
+                if roll_col is None:
+                    messages.error(request, "Could not find a roll number column in the Excel file.")
+                    return redirect('upload_allocation')
+
+                # Identify elective columns as all columns except roll_col
+                elective_columns = [col for col in df.columns if col != roll_col]
+
                 errors = []
-                processed = 0
-                
+                allocations_created = 0
+
                 for index, row in df.iterrows():
-                    try:
-                        raw_roll = str(row[roll_column]).strip()
-                        roll = str(int(float(raw_roll)))  # Force integer format (1, 2, 3...)
-                    except:
-                        errors.append(f"Row {index+2}: Invalid roll number '{raw_roll}'")
+                    # Process roll number
+                    raw_roll = str(row[roll_col]).strip()
+                    if not raw_roll:
+                        errors.append(f"Row {index+2}: Missing roll number")
                         continue
-                    
+
+                    # Find student using roll and semester
                     try:
-                        student = Student.objects.get(roll=roll, semester=semester)
+                        student = Student.objects.get(roll=raw_roll, semester=semester)
                     except Student.DoesNotExist:
-                        errors.append(f"Row {index+2}: Student {roll} not found")
+                        errors.append(f"Row {index+2}: Student with roll {raw_roll} not found for semester {semester}")
                         continue
-                    
-                    for col_header in elective_columns:
-                        cell_value = str(row[col_header]).strip()
+
+                    # Process elective columns
+                    for col in elective_columns:
+                        cell_value = str(row[col]).strip()
                         if not cell_value:
                             continue
+
+                        # Extract subject code using regex
+                        code_match = re.search(r'^([A-Z]+-[A-Z0-9]+)', cell_value.upper())
+                        if not code_match:
+                            errors.append(f"Row {index+2}: Invalid subject code format in '{col}' - '{cell_value}'")
+                            continue
                         
-                        # Extract subject code (split on colon or space)
-                        code_part = cell_value.split(':')[0].split(' ')[0].strip().upper()
-                        
-                        # Find subject by code (case-insensitive) regardless of stream
+                        subject_code = code_match.group(1).replace(" ", "")
+
+                        # Find subject
                         try:
                             subject = Subject.objects.get(
-                                code__iexact=code_part,
+                                code__iexact=subject_code,
                                 semester=int(semester),
                                 is_elective=True
                             )
                         except Subject.DoesNotExist:
-                            continue  # Silently skip missing subjects
-                            
-                        # Auto-detect stream from subject's actual stream
-                        stream = subject.stream
+                            errors.append(f"Row {index+2}: Subject {subject_code} not found for semester {semester}")
+                            continue
                         
-                        # Create AllocationResult
+                        # Create or update allocation result
                         AllocationResult.objects.update_or_create(
                             semester=semester,
                             student=student,
-                            stream=stream,
+                            stream=subject.stream,
                             defaults={
                                 'allocated_subject': subject,
                                 'is_match': ElectiveSelection.objects.filter(
@@ -459,18 +465,21 @@ def upload_allocation(request):
                                 ).exists()
                             }
                         )
-                        processed += 1
-                
-                messages.success(request, 
-                    f"Allocated {processed} subjects. Skipped {len(errors)} issues."
-                )
+                        allocations_created += 1
+
+                # Provide feedback to the user
+                if errors:
+                    error_summary = f"Created {allocations_created} allocations with {len(errors)} errors: " + "; ".join(errors[:5])  # Limit to first 5 errors for brevity
+                    messages.warning(request, error_summary)
+                else:
+                    messages.success(request, f"Successfully created {allocations_created} allocations")
+
                 return redirect('allocation_results', semester=semester)
-            
+
             except Exception as e:
-                messages.error(request, f"Fatal error: {str(e)}")
-        else:
-            messages.error(request, "Invalid form submission")
-    
+                messages.error(request, f"Processing failed: {str(e)}")
+                return redirect('upload_allocation')
+
     form = UploadAllocationForm()
     return render(request, 'core/upload_allocation.html', {'form': form})
 
