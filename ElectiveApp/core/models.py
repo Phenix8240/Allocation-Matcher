@@ -115,6 +115,10 @@ class Student(models.Model):
         default=timezone.now,
         help_text=_("Timestamp when the student record was created.")
     )
+    elective_finalized = models.BooleanField(
+        default=False,
+        help_text=_("If True it means the electives are finalized.")
+    )
 
     def __str__(self):
         return f"{self.user.email} — {self.roll or 'no roll'}"

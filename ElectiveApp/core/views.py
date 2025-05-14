@@ -12,6 +12,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from .forms import UploadFileForm
 from .models import Student, Subject, ElectiveSelection
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 User = get_user_model()
 
@@ -112,6 +113,7 @@ def login_view(request):
     return render(request, 'core/login.html')
 
 @login_required
+@ensure_csrf_cookie
 def student_dashboard(request):
     student = request.user.student
     if not student.department or not student.semester or not student.roll:
@@ -119,7 +121,7 @@ def student_dashboard(request):
     
     return render(request, 'core/student_dashboard.html', {
         'student': student,
-        'electives_saved': ElectiveSelection.objects.filter(student=student).exists()
+        'electives_finalized': student.elective_finalized
     })
 
 @login_required
@@ -176,8 +178,13 @@ def fetch_core_subjects(request):
     if not student.semester:
         return JsonResponse({'error': 'Semester not set'}, status=400)
     
+    try:
+        semester = int(student.semester)  # Convert to integer
+    except ValueError:
+        return JsonResponse({'error': 'Invalid semester value'}, status=400)
+    
     core_subjects = Subject.objects.filter(
-        semester=student.semester,
+        semester=semester,  # Now comparing integer to integer
         is_elective=False
     ).values('code', 'name', 'stream')
     
@@ -189,65 +196,82 @@ def fetch_electives(request):
     if not student.semester:
         return JsonResponse({'error': 'Semester not set'}, status=400)
     
-    electives = Subject.objects.filter(
-        semester=student.semester,
-        is_elective=True
-    ).order_by('stream', 'code')
-    
-    # Group electives by stream
-    grouped_electives = {}
-    for subject in electives:
-        grouped_electives.setdefault(subject.stream, []).append({
-            'code': subject.code,
-            'name': subject.name,
+    # Corrected typo: electives_finalized -> elective_finalized
+    if student.elective_finalized:
+        chosen = ElectiveSelection.objects.filter(student=student)
+        return JsonResponse({
+            'chosen': [{
+                'code': s.subject.code,
+                'name': s.subject.name,
+                'stream': s.subject.stream
+            } for s in chosen],
+            'finalized': True
         })
     
-    # Get selected electives
-    selected_codes = ElectiveSelection.objects.filter(
+    # Handle non-finalized state
+    try:
+        semester = int(student.semester)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid semester value'}, status=400)
+    
+    # Fetch electives for the semester
+    electives = Subject.objects.filter(semester=semester, is_elective=True)
+    
+    # Group by stream
+    grouped_electives = {}
+    for elective in electives:
+        stream = elective.stream
+        if stream not in grouped_electives:
+            grouped_electives[stream] = []
+        grouped_electives[stream].append({
+            'code': elective.code,
+            'name': elective.name,
+        })
+    
+    # Get selected codes
+    selected_codes = list(ElectiveSelection.objects.filter(
         student=student
-    ).values_list('subject__code', flat=True)
+    ).values_list('subject__code', flat=True))
     
     return JsonResponse({
         'electives': grouped_electives,
-        'selected': list(selected_codes),
+        'selected': selected_codes,
+        'finalized': False
     })
-
 @login_required
 def save_elective_selection(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
     
     student = request.user.student
+    if student.elective_finalized:  # Corrected field name
+        return JsonResponse({'error': 'Electives have been finalized and cannot be modified.'}, status=400)
+
     try:
         data = json.loads(request.body)
         selected_codes = data.get('selected_codes', [])
-        
-        # Validate selected codes
+        action = data.get('action', 'save')
+
+        # Validation: Ensure selected codes are valid electives for the student's semester
         valid_subjects = Subject.objects.filter(
-            semester=student.semester,
-            is_elective=True,
-            code__in=selected_codes
+            code__in=selected_codes, 
+            is_elective=True, 
+            semester=student.semester
         )
-        
-        # Group by stream to ensure one selection per group
-        stream_selections = {}
-        for subject in valid_subjects:
-            stream_selections.setdefault(subject.stream, []).append(subject)
-        
-        # Check for multiple selections in the same stream
-        for stream, subjects in stream_selections.items():
-            if len(subjects) > 1:
-                return JsonResponse({
-                    'error': f"Cannot select multiple subjects from stream {stream}"
-                }, status=400)
-        
-        # Clear previous selections
-        ElectiveSelection.objects.filter(student=student).delete()
-        
+
+        if len(valid_subjects) != len(selected_codes):
+            return JsonResponse({'error': 'Invalid subject selection'}, status=400)
+
         # Save new selections
+        ElectiveSelection.objects.filter(student=student).delete()
         for subject in valid_subjects:
             ElectiveSelection.objects.create(student=student, subject=subject)
-        
+
+        # Finalize if action is confirm
+        if action == 'confirm':
+            student.elective_finalized = True  # Corrected from electives_finalized
+            student.save()
+
         return JsonResponse({'message': 'Elective selections saved successfully'})
     
     except Exception as e:

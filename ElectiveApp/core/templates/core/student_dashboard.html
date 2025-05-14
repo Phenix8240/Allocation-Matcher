@@ -13,34 +13,18 @@
     <div id="status-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
         <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
             <div class="text-center">
-                <div class="mx-auto mb-4">
-                    {% if electives_saved %}
-                        <svg class="w-12 h-12 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    {% else %}
-                        <svg class="w-12 h-12 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                    {% endif %}
-                </div>
-                <h3 class="text-lg font-medium mb-2">
-                    {% if electives_saved %}
-                        Electives Submitted!
-                    {% else %}
-                        Electives Pending
-                    {% endif %}
-                </h3>
-                <p class="text-gray-600 mb-4">
-                    {% if electives_saved %}
-                        Your elective selections have been successfully submitted.
-                    {% else %}
-                        Please submit your elective choices before the deadline.
-                    {% endif %}
-                </p>
-                <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                    Continue
-                </button>
+                {% if electives_finalized %}
+                    <!-- Success state -->
+                    <svg class="w-12 h-12 text-green-500 mx-auto" ...></svg>
+                    <h3 class="...">Electives Submitted!</h3>
+                    <p class="...">Your elective selections have been finalized.</p>
+                {% else %}
+                    <!-- Warning state -->
+                    <svg class="w-12 h-12 text-yellow-500 mx-auto" ...></svg>
+                    <h3 class="...">Electives Pending</h3>
+                    <p class="...">Please finalize your elective choices.</p>
+                {% endif %}
+                <button onclick="closeModal()" ...>Continue</button>
             </div>
         </div>
     </div>
@@ -124,7 +108,7 @@
     
         // Auto-show modal after 1 second
         setTimeout(() => {
-            if(!sessionStorage.getItem('modalClosed')) {
+            if (!sessionStorage.getItem('modalClosed')) {
                 document.getElementById('status-modal').classList.remove('hidden');
             }
         }, 1000);
@@ -163,45 +147,92 @@
             }
     
             // Function to show electives
-            function showElectives(mode = '') {
-                $.get('{% url 'fetch_electives' %}?mode=' + mode, function(data) {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
+            function showElectives() {
+                $.get('{% url 'fetch_electives' %}', function(data) {
                     let html = '';
-                    if (data.chosen) {
-                        html += '<h3 class="font-bold mb-2 text-gray-800">Chosen Electives</h3>';
+                    if (data.finalized) {
+                        // Display finalized electives
+                        html += '<div class="bg-green-50 p-4 rounded-lg mb-4">';
+                        html += '<h3 class="font-bold text-green-800">Electives Finalized</h3>';
+                        html += '<p class="text-green-700">Your choices have been submitted and cannot be modified.</p></div>';
+                        html += '<h3 class="font-bold mb-2 text-gray-800">Finalized Electives</h3>';
                         data.chosen.forEach(subject => {
                             html += `
-                                <div class="p-4 bg-white shadow-md rounded-lg">
+                                <div class="p-4 bg-white shadow-md rounded-lg mb-2">
                                     <h4 class="font-bold text-gray-800">${subject.code}</h4>
                                     <p class="text-gray-700">${subject.name}</p>
                                     <p class="text-sm text-gray-500">Stream: ${subject.stream}</p>
                                 </div>
                             `;
                         });
-                        html += '<button id="edit-electives" class="mt-4 bg-green-600 text-white p-2 rounded-md hover:bg-green-700">Edit Choices</button>';
                     } else {
-                        html += '<h3 class="font-bold mb-2 text-gray-800">Choose Electives</h3>';
-                        for (let stream in data.electives) {
-                            html += `<div class="mb-4"><h4 class="font-semibold text-gray-700">${stream}</h4>`;
-                            data.electives[stream].forEach(subject => {
-                                let checked = data.selected.includes(subject.code) ? 'checked' : '';
+                        // Build elective selection UI
+                        html += '<h3 class="font-bold mb-4 text-gray-800">Choose Electives</h3>';
+                        for (const [stream, subjects] of Object.entries(data.electives)) {
+                            html += `<div class="bg-white p-4 rounded-lg shadow mb-4">`;
+                            html += `<h4 class="font-bold text-gray-800 mb-2">${stream}</h4>`;
+                            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                            subjects.forEach(subject => {
+                                const isChecked = data.selected.includes(subject.code);
                                 html += `
-                                    <div class="flex items-center">
-                                        <input type="checkbox" class="elective-checkbox mr-2" value="${subject.code}" ${checked}>
-                                        <label class="text-gray-700">${subject.code}: ${subject.name}</label>
-                                    </div>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50">
+                                        <input type="checkbox" class="elective-checkbox mr-2" 
+                                               value="${subject.code}" ${isChecked ? 'checked' : ''}>
+                                        <span class="text-gray-800">${subject.code} - ${subject.name}</span>
+                                    </label>
                                 `;
                             });
-                            html += '</div>';
+                            html += '</div></div>';
                         }
-                        html += '<button id="save-electives" class="mt-4 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Save Selections</button>';
+                        html += `
+                            <div class="mt-6 space-x-4">
+                                <button id="save-electives" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                    Save Draft
+                                </button>
+                                <button id="confirm-electives" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                                    Finalize Selection
+                                </button>
+                            </div>
+                        `;
                     }
                     $('#electives-content').html(html);
                 });
             }
+    
+            // Consolidated handler for save and confirm actions
+            $(document).on('click', '#save-electives, #confirm-electives', function() {
+                const isConfirm = $(this).attr('id') === 'confirm-electives';
+                const confirmMessage = isConfirm 
+                    ? "Are you sure you want to finalize your choices? This cannot be undone." 
+                    : "Save draft selections?";
+    
+                if (!confirm(confirmMessage)) return;
+    
+                const selectedCodes = $('.elective-checkbox:checked').map(function() {
+                    return this.value;
+                }).get();
+    
+                const csrftoken = getCookie('csrftoken');
+    
+                $.ajax({
+                    url: '{% url 'save_elective_selection' %}',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        selected_codes: selectedCodes,
+                        action: isConfirm ? 'confirm' : 'save'
+                    }),
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    success: function() {
+                        window.location.reload();
+                    },
+                    error: function(xhr) {
+                        alert(xhr.responseJSON.error);
+                    }
+                });
+            });
     
             // Sidebar link handlers
             $('#dashboard-link').click(function(e) {
@@ -224,37 +255,6 @@
                 showElectives();
             });
     
-            // Handle save electives with confirmation
-            $(document).on('click', '#save-electives', function() {
-                if (confirm("Are you sure you want to save your elective choices?")) {
-                    const csrftoken = getCookie('csrftoken');
-                    let selected_codes = $('.elective-checkbox:checked').map(function() {
-                        return this.value;
-                    }).get();
-                    
-                    $.ajax({
-                        url: '{% url 'save_elective_selection' %}',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ 
-                            selected_codes: selected_codes,
-                            csrfmiddlewaretoken: csrftoken  // Additional security
-                        }),
-                        headers: { 
-                            'X-CSRFToken': csrftoken,
-                            'Content-Type': 'application/json'
-                        },
-                        success: function(response) {
-                            alert(response.message);
-                            window.location.reload();
-                        },
-                        error: function(xhr) {
-                            alert(xhr.responseJSON.error);
-                        }
-                    });
-                }
-            });
-    
             // Handle edit electives
             $(document).on('click', '#edit-electives', function() {
                 showElectives('edit');
@@ -263,6 +263,7 @@
             // Show core subjects by default
             $('#core-subjects-link').click();
         });
+    
         // Auto-show modal after 1 second
         setTimeout(() => {
             if (!sessionStorage.getItem('modalClosed')) {
@@ -273,7 +274,7 @@
                 }
             }
         }, 1000);
-
+    
         function closeModal() {
             const modal = document.getElementById('status-modal');
             if (modal) {
