@@ -12,4 +12,6 @@ urlpatterns = [
     path('fetch-core-subjects/', views.fetch_core_subjects, name='fetch_core_subjects'),
     path('fetch-electives/', views.fetch_electives, name='fetch_electives'),
     path('save-elective-selection/', views.save_elective_selection, name='save_elective_selection'),
+    path('admin/student-choices/', views.student_choices, name='student_choices'),
+    path('admin/view-choices/<str:semester>/', views.view_choices, name='view_choices'),
 ]

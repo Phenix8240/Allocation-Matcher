@@ -53,9 +53,10 @@
     <nav class="space-y-3 flex-1">
       <button id="btn-student-details" class="w-full text-left py-3 px-4 rounded-xl bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium transition-all duration-200 shadow-md">Student Details</button>
       <button id="btn-upload-excel" class="w-full text-left py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-all duration-200 shadow-md">Upload Student Excel</button>
+      <button id="btn-student-choices" class="w-full text-left py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-medium transition-all duration-200 shadow-md">Student Choices</button>
     </nav>
     <div class="mt-auto">
-      <button id="theme-toggle" class="p-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover guilty:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 shadow">
+      <button id="theme-toggle" class="p-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 shadow">
         <svg id="sun-icon" class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
         </svg>
@@ -142,12 +143,24 @@
       openUploadModal();
     });
 
+    document.getElementById('btn-student-choices').addEventListener('click', () => {
+      loadContent("{% url 'student_choices' %}");
+    });
+
     document.getElementById('close-modal').addEventListener('click', () => {
       document.getElementById('upload-modal').classList.add('hidden');
     });
 
     window.addEventListener('DOMContentLoaded', () => {
       loadContent("{% url 'student-details' %}");
+    });
+
+    // Handle dynamic "View" button clicks for student choices
+    document.addEventListener('click', function(event) {
+      if (event.target.classList.contains('view-choices')) {
+        const semester = event.target.getAttribute('data-semester');
+        loadContent(`/admin/view-choices/${semester}/`);
+      }
     });
   </script>
 </body>

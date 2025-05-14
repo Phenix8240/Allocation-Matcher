@@ -1,0 +1,29 @@
+<div>
+    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Elective Choices for Semester {{ semester }}</h2>
+    {% if message %}
+      <p class="text-gray-600 dark:text-gray-300">{{ message }}</p>
+    {% else %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow">
+          <thead>
+            <tr class="bg-gray-100 dark:bg-gray-700">
+              <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Roll Number</th>
+              {% for stream in streams %}
+                <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">{{ stream }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data %}
+              <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ row.roll }}</td>
+                {% for stream in streams %}
+                  <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ row[stream] }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>

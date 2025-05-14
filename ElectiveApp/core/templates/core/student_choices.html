@@ -1,0 +1,12 @@
+<div class="space-y-4">
+    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Student Choices by Semester</h2>
+    {% for semester in semesters %}
+    <div class="flex justify-between items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <span class="text-lg font-medium text-gray-900 dark:text-white">Semester {{ semester }}</span>
+      <div>
+        <button class="view-choices btn-primary text-white px-4 py-2 rounded-lg mr-2" data-semester="{{ semester }}">View</button>
+        <a href="{% url 'download_choices' semester %}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">Download</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>

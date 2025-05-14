@@ -3,6 +3,7 @@ import random
 import string
 import pandas as pd
 import json
+import io
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
@@ -12,6 +13,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from .forms import UploadFileForm
 from .models import Student, Subject, ElectiveSelection
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 User = get_user_model()
@@ -276,3 +278,92 @@ def save_elective_selection(request):
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+def student_choices(request):
+    """Render a page listing all semesters with view and download options."""
+    if not request.user.is_staff:
+        return redirect('student_dashboard')
+    semesters = [choice[0] for choice in Student._meta.get_field('semester').choices]
+    return render(request, 'core/student_choices.html', {'semesters': semesters})
+
+@login_required
+def view_choices(request, semester):
+    """Render a table of elective choices for a given semester."""
+    if not request.user.is_staff:
+        return redirect('student_dashboard')
+    
+    try:
+        semester_int = int(semester)
+    except ValueError:
+        return HttpResponseBadRequest("Invalid semester")
+
+    students = Student.objects.filter(semester=semester, elective_finalized=True)
+    if not students.exists():
+        return render(request, 'core/view_choices.html', {
+            'semester': semester,
+            'message': 'No students have finalized choices for this semester.'
+        })
+
+    # Get unique streams for electives in this semester
+    streams = Subject.objects.filter(semester=semester_int, is_elective=True).values_list('stream', flat=True).distinct()
+
+    # Prepare data for the table
+    data = []
+    for student in students:
+        row = {'roll': student.roll}
+        selections = {sel.subject.stream: f"{sel.subject.code} - {sel.subject.name}" 
+                      for sel in student.elective_selections.all()}
+        for stream in streams:
+            row[stream] = selections.get(stream, 'N/A')
+        data.append(row)
+
+    context = {
+        'semester': semester,
+        'streams': streams,
+        'data': data,
+    }
+    return render(request, 'core/view_choices.html', context)
+
+@login_required
+def download_choices(request, semester):
+    """Generate and serve an Excel file with elective choices for a given semester."""
+    if not request.user.is_staff:
+        return redirect('student_dashboard')
+    
+    try:
+        semester_int = int(semester)
+    except ValueError:
+        return HttpResponseBadRequest("Invalid semester")
+
+    students = Student.objects.filter(semester=semester, elective_finalized=True)
+    if not students.exists():
+        return HttpResponse("No students have finalized choices for this semester.", status=404)
+
+    streams = Subject.objects.filter(semester=semester_int, is_elective=True).values_list('stream', flat=True).distinct()
+
+    # Prepare data for Excel
+    data = []
+    for student in students:
+        row = {'Roll Number': student.roll}
+        selections = {sel.subject.stream: f"{sel.subject.code} - {sel.subject.name}" 
+                      for sel in student.elective_selections.all()}
+        for stream in streams:
+            row[stream] = selections.get(stream, 'N/A')
+        data.append(row)
+
+    # Create DataFrame and Excel file in memory
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name=f'Semester {semester}')
+    output.seek(0)
+
+    # Prepare response
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="choices_semester_{semester}.xlsx"'
+    return response
