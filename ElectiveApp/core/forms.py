@@ -12,12 +12,5 @@ class LoginForm(AuthenticationForm):
     password = forms.CharField(widget=forms.PasswordInput)
 
 class UploadAllocationForm(forms.Form):
-    semester = forms.ChoiceField(
-        choices=Student._meta.get_field('semester').choices,
-        label="Semester",
-        help_text="Select the semester for which the allocation file is being uploaded."
-    )
-    allocation_file = forms.FileField(
-        label="Allocation File",
-        help_text="Upload the Excel file containing subject allocations."
-    )
+    semester = forms.ChoiceField(choices=[(str(i), f"Semester {i}") for i in range(1, 9)])
+    allocation_file = forms.FileField()

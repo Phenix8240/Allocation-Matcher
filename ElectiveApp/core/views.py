@@ -388,6 +388,11 @@ def find_roll_column(columns):
             return col
     return None
 
+
+def normalize_code(code):
+    """Normalize subject codes by removing spaces and underscores, keeping hyphens."""
+    return re.sub(r'[\s_]+', '', code).upper().replace('PECIT', 'PEC-IT')
+
 @staff_member_required
 def upload_allocation(request):
     if request.method == 'POST':
@@ -395,82 +400,76 @@ def upload_allocation(request):
         if form.is_valid():
             semester = form.cleaned_data['semester']
             allocation_file = request.FILES['allocation_file']
-            
+
             try:
-                # Read Excel file with all data as strings and fill NaN with empty strings
-                df = pd.read_excel(allocation_file, dtype=str).fillna('')
+                # Read Excel file, skipping the first 3 rows, using row 3 as header
+                df = pd.read_excel(allocation_file, header=3, dtype=str).fillna('')
                 df.columns = [col.strip() for col in df.columns]
 
-                # Dynamically find roll number column
+                # Debug: Log columns and first few rows
+                print("Columns:", df.columns.tolist())
+                print("First 5 rows:", df.head(5).to_dict(orient='records'))
+
+                # Find roll column dynamically
                 roll_col = find_roll_column(df.columns)
                 if roll_col is None:
-                    messages.error(request, "Could not find a roll number column in the Excel file.")
+                    messages.error(request, "Could not find roll number column in the Excel file.")
                     return redirect('upload_allocation')
 
-                # Identify elective columns as all columns except roll_col
-                elective_columns = [col for col in df.columns if col != roll_col]
+                # Filter only rows where roll number is a digit
+                df = df[df[roll_col].str.match(r'^\d+$', na=False)]
+                if df.empty:
+                    messages.error(request, "No valid student data found in the Excel file.")
+                    return redirect('upload_allocation')
+
+                print(f"Number of student rows: {len(df)}")
+
+                # Find elective columns dynamically
+                elective_columns = [col for col in df.columns if 'elective' in col.lower()]
+                if not elective_columns:
+                    messages.error(request, "No elective columns found in the Excel file.")
+                    return redirect('upload_allocation')
+
+                # Fetch students and subjects
+                students = Student.objects.filter(semester=semester)
+                student_map = {s.roll: s for s in students}
+                print("Available students:", list(student_map.keys()))
+
+                subjects = Subject.objects.filter(semester=int(semester), is_elective=True)
+                subject_map = {s.code.upper(): s for s in subjects}
+                print("Available subjects:", list(subject_map.keys()))
 
                 errors = []
                 allocations_created = 0
 
                 for index, row in df.iterrows():
-                    # Process roll number
-                    raw_roll = str(row[roll_col]).strip()
-                    if not raw_roll:
-                        errors.append(f"Row {index+2}: Missing roll number")
+                    roll = str(row[roll_col]).strip()
+                    print(f"Processing roll: {roll}")
+                    student = student_map.get(roll)
+                    if not student:
+                        errors.append(f"Row {index+4}: Student roll {roll} not found for semester {semester}")
                         continue
 
-                    # Find student using roll and semester
-                    try:
-                        student = Student.objects.get(roll=raw_roll, semester=semester)
-                    except Student.DoesNotExist:
-                        errors.append(f"Row {index+2}: Student with roll {raw_roll} not found for semester {semester}")
-                        continue
-
-                    # Process elective columns
                     for col in elective_columns:
                         cell_value = str(row[col]).strip()
                         if not cell_value:
                             continue
-
-                        # Extract subject code using regex
-                        code_match = re.search(r'^([A-Z]+-[A-Z0-9]+)', cell_value.upper())
-                        if not code_match:
-                            errors.append(f"Row {index+2}: Invalid subject code format in '{col}' - '{cell_value}'")
-                            continue
-                        
-                        subject_code = code_match.group(1).replace(" ", "")
-
-                        # Find subject
-                        try:
-                            subject = Subject.objects.get(
-                                code__iexact=subject_code,
-                                semester=int(semester),
-                                is_elective=True
+                        subject_code = normalize_code(cell_value)
+                        print(f"Subject code: {cell_value} -> {subject_code}")
+                        subject = subject_map.get(subject_code)
+                        if subject:
+                            AllocationResult.objects.get_or_create(
+                                student=student,
+                                subject=subject,
+                                semester=semester
                             )
-                        except Subject.DoesNotExist:
-                            errors.append(f"Row {index+2}: Subject {subject_code} not found for semester {semester}")
-                            continue
-                        
-                        # Create or update allocation result
-                        AllocationResult.objects.update_or_create(
-                            semester=semester,
-                            student=student,
-                            stream=subject.stream,
-                            defaults={
-                                'allocated_subject': subject,
-                                'is_match': ElectiveSelection.objects.filter(
-                                    student=student,
-                                    subject=subject
-                                ).exists()
-                            }
-                        )
-                        allocations_created += 1
+                            allocations_created += 1
+                        else:
+                            errors.append(f"Row {index+4}, Col '{col}': Subject '{cell_value}' (normalized: '{subject_code}') not found")
 
-                # Provide feedback to the user
+                # Provide feedback
                 if errors:
-                    error_summary = f"Created {allocations_created} allocations with {len(errors)} errors: " + "; ".join(errors[:5])  # Limit to first 5 errors for brevity
-                    messages.warning(request, error_summary)
+                    messages.warning(request, f"Created {allocations_created} allocations with {len(errors)} errors: " + "; ".join(errors[:5]))
                 else:
                     messages.success(request, f"Successfully created {allocations_created} allocations")
 
@@ -479,10 +478,11 @@ def upload_allocation(request):
             except Exception as e:
                 messages.error(request, f"Processing failed: {str(e)}")
                 return redirect('upload_allocation')
+    else:
+        form = UploadAllocationForm()
 
-    form = UploadAllocationForm()
-    return render(request, 'core/upload_allocation.html', {'form': form})
-
+    return render(request, 'core/upload_allocation.html', {'form': form})  
+    
 @login_required
 def allocation_results(request, semester):
     if not request.user.is_staff:
