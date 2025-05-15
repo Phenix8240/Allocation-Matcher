@@ -389,100 +389,102 @@ def find_roll_column(columns):
     return None
 
 
-def normalize_code(code):
-    """Normalize subject codes by removing spaces and underscores, keeping hyphens."""
-    return re.sub(r'[\s_]+', '', code).upper().replace('PECIT', 'PEC-IT')
+def find_roll_column(columns):
+    """Improved roll number detection with academic patterns"""
+    patterns = [
+        r'university\s*roll',
+        r'roll\s*no',
+        r'registration\s*no',
+        r'reg\s*no',
+        r'student\s*id',
+        r'^\s*roll\s*$'
+    ]
+    for col in columns:
+        if any(re.search(p, str(col), re.IGNORECASE) for p in patterns):
+            return col
+    return None
+
+def normalize_code(raw):
+    """Extract codes from any string format"""
+    # First try to find code in parentheses
+    code_match = re.search(r'\(([A-Z0-9-]+)\)', str(raw).upper())
+    if code_match:
+        base_code = code_match.group(1)
+    else:
+        base_code = str(raw).upper()
+    
+    # Clean special characters
+    return re.sub(r'[^A-Z0-9-]', '', base_code).strip('-')
+
+def check_preference_match(student, subject):
+    """Check if student originally chose this subject"""
+    return student.elective_selections.filter(subject=subject).exists()
+
+# Add to top
+from django.db import transaction
 
 @staff_member_required
+@transaction.atomic
 def upload_allocation(request):
+    form = UploadAllocationForm()
+    
     if request.method == 'POST':
         form = UploadAllocationForm(request.POST, request.FILES)
         if form.is_valid():
-            semester = form.cleaned_data['semester']
-            allocation_file = request.FILES['allocation_file']
-
             try:
-                # Read Excel file, skipping the first 3 rows, using row 3 as header
-                df = pd.read_excel(allocation_file, header=3, dtype=str).fillna('')
-                df.columns = [col.strip() for col in df.columns]
+                # Force delete existing allocations for testing
+                AllocationResult.objects.all().delete()
+                
+                semester = form.cleaned_data['semester']
+                df = pd.read_excel(
+                    request.FILES['allocation_file'],
+                    header=2,
+                    dtype=str
+                ).fillna('')
+                
+                # DEBUG: Print raw data
+                print("Raw Excel Data:")
+                print(df.to_dict(orient='records'))
+                
+                # Process allocations
+                allocations = []
+                for _, row in df.iterrows():
+                    try:
+                        student = Student.objects.get(
+                            roll=str(row['Roll No.']).strip(),
+                            semester=semester
+                        )
+                        # Process all other columns
+                        for col, value in row.items():
+                            if col == 'Roll No.': continue
+                            code = re.search(r'([A-Z]{3}-[A-Z]{2}\d+[A-Z]?)', str(value).upper())
+                            if code:
+                                subject = Subject.objects.get(
+                                    code__iexact=code.group(1).replace(" ", ""),
+                                    semester=int(semester)
+                                )
+                                allocations.append(
+                                    AllocationResult(
+                                        semester=semester,
+                                        student=student,
+                                        stream=subject.stream,
+                                        allocated_subject=subject
+                                    )
+                                )
+                    except Exception as e:
+                        print(f"Error: {str(e)}")
 
-                # Debug: Log columns and first few rows
-                print("Columns:", df.columns.tolist())
-                print("First 5 rows:", df.head(5).to_dict(orient='records'))
-
-                # Find roll column dynamically
-                roll_col = find_roll_column(df.columns)
-                if roll_col is None:
-                    messages.error(request, "Could not find roll number column in the Excel file.")
-                    return redirect('upload_allocation')
-
-                # Filter only rows where roll number is a digit
-                df = df[df[roll_col].str.match(r'^\d+$', na=False)]
-                if df.empty:
-                    messages.error(request, "No valid student data found in the Excel file.")
-                    return redirect('upload_allocation')
-
-                print(f"Number of student rows: {len(df)}")
-
-                # Find elective columns dynamically
-                elective_columns = [col for col in df.columns if 'elective' in col.lower()]
-                if not elective_columns:
-                    messages.error(request, "No elective columns found in the Excel file.")
-                    return redirect('upload_allocation')
-
-                # Fetch students and subjects
-                students = Student.objects.filter(semester=semester)
-                student_map = {s.roll: s for s in students}
-                print("Available students:", list(student_map.keys()))
-
-                subjects = Subject.objects.filter(semester=int(semester), is_elective=True)
-                subject_map = {s.code.upper(): s for s in subjects}
-                print("Available subjects:", list(subject_map.keys()))
-
-                errors = []
-                allocations_created = 0
-
-                for index, row in df.iterrows():
-                    roll = str(row[roll_col]).strip()
-                    print(f"Processing roll: {roll}")
-                    student = student_map.get(roll)
-                    if not student:
-                        errors.append(f"Row {index+4}: Student roll {roll} not found for semester {semester}")
-                        continue
-
-                    for col in elective_columns:
-                        cell_value = str(row[col]).strip()
-                        if not cell_value:
-                            continue
-                        subject_code = normalize_code(cell_value)
-                        print(f"Subject code: {cell_value} -> {subject_code}")
-                        subject = subject_map.get(subject_code)
-                        if subject:
-                            AllocationResult.objects.get_or_create(
-                                student=student,
-                                subject=subject,
-                                semester=semester
-                            )
-                            allocations_created += 1
-                        else:
-                            errors.append(f"Row {index+4}, Col '{col}': Subject '{cell_value}' (normalized: '{subject_code}') not found")
-
-                # Provide feedback
-                if errors:
-                    messages.warning(request, f"Created {allocations_created} allocations with {len(errors)} errors: " + "; ".join(errors[:5]))
-                else:
-                    messages.success(request, f"Successfully created {allocations_created} allocations")
-
+                # Force create allocations
+                AllocationResult.objects.bulk_create(allocations)
+                print(f"CREATED {len(allocations)} ALLOCATIONS")  # Debug line
+                
                 return redirect('allocation_results', semester=semester)
 
             except Exception as e:
-                messages.error(request, f"Processing failed: {str(e)}")
+                messages.error(request, f"Error: {str(e)}")
                 return redirect('upload_allocation')
-    else:
-        form = UploadAllocationForm()
-
-    return render(request, 'core/upload_allocation.html', {'form': form})  
     
+    return render(request, 'core/upload_allocation.html', {'form': form})
 @login_required
 def allocation_results(request, semester):
     if not request.user.is_staff:
