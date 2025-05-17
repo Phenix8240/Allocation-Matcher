@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import io
 import re
+from django.views.decorators.csrf import csrf_protect
 from collections import defaultdict
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -787,3 +788,22 @@ def reset_student_password(request, student_id):
     except Exception as e:
         messages.error(request, f"Failed to reset password: {e}")
     return redirect('student_details')
+
+@staff_member_required
+@csrf_protect
+def delete_subject(request, subject_id):
+    if request.method == 'POST':
+        try:
+            subject = Subject.objects.get(id=subject_id)
+            subject_code = subject.code
+            subject.delete()
+            messages.success(request, f"Subject {subject_code} deleted successfully.")
+            logger.info(f"Subject {subject_code} (ID: {subject_id}) deleted by {request.user.email}")
+        except Subject.DoesNotExist:
+            messages.error(request, "Subject not found.")
+            logger.warning(f"Attempt to delete non-existent subject ID {subject_id} by {request.user.email}")
+        except Exception as e:
+            messages.error(request, f"Failed to delete subject: {str(e)}")
+            logger.error(f"Error deleting subject ID {subject_id}: {str(e)}")
+        return redirect('list_subjects')
+    return HttpResponseBadRequest("Invalid request method.")

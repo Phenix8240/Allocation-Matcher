@@ -24,4 +24,5 @@ urlpatterns = [
     path('admin/download-choices/<str:semester>/', views.download_choices, name='download_choices'),
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset-confirm/<uidb64>/<token>/', views.password_reset_confirm, name='password_reset_confirm'),
+    path('delete-subject/<int:subject_id>/', views.delete_subject, name='delete_subject'),
 ]
