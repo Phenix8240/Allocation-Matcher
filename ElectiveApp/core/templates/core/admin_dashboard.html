@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
     body {
       transition: background-color 0.3s, color 0.3s;
@@ -44,20 +45,34 @@
     .btn-primary:hover {
       background: linear-gradient(90deg, #2563eb, #1d4ed8);
     }
+    .error-message {
+      color: #ef4444;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
   </style>
 </head>
 <body class="light flex min-h-screen">
   <!-- Sidebar -->
   <div class="sidebar w-64 p-6 flex flex-col h-screen sticky top-0">
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-8">Admin Dashboard</h2>
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h2>
+      <a href="{% url 'logout' %}" class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all" title="Logout">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </a>
+    </div>
     <nav class="space-y-3 flex-1">
-      <button id="btn-student-details" class="w-full text-left py-3 px-4 rounded-xl bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium transition-all duration-200 shadow-md">Student Details</button>
-      <button id="btn-upload-excel" class="w-full text-left py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-all duration-200 shadow-md">Upload Student Excel</button>
-      <button id="btn-student-choices" class="w-full text-left py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-medium transition-all duration-200 shadow-md">Student Choices</button>
-      <button id="btn-upload-allocation" class="w-full text-left py-3 px-4 rounded-xl bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white font-medium transition-all duration-200 shadow-md">Allocate Subjects</button>
+      <button id="btn-student-details" class="w-full text-left py-3 px-4 rounded-xl bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white font-medium transition-all shadow-md">Student Details</button>
+      <button id="btn-upload-excel" class="w-full text-left py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-all shadow-md">Upload Student Excel</button>
+      <button id="btn-student-choices" class="w-full text-left py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-medium transition-all shadow-md">Student Choices</button>
+      <button id="btn-upload-allocation" class="w-full text-left py-3 px-4 rounded-xl bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white font-medium transition-all shadow-md">Allocate Subjects</button>
+      <button id="btn-create-subject" class="w-full text-left py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium transition-all shadow-md">Create Subject</button>
+      <button id="btn-list-subjects" class="w-full text-left py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 text-white font-medium transition-all shadow-md">List Subjects</button>
     </nav>
     <div class="mt-auto">
-      <button id="theme-toggle" class="p-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 shadow">
+      <button id="theme-toggle" class="p-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all shadow" title="Toggle Theme">
         <svg id="sun-icon" class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
         </svg>
@@ -71,27 +86,27 @@
   <!-- Main Content -->
   <div class="flex-1 p-8 overflow-auto">
     <!-- Welcome Section -->
-    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Welcome, Admin!</h2>
+    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Welcome, {{ user.email }}!</h2>
     <div class="card p-6 rounded-2xl shadow-lg mb-8">
       <p class="text-gray-600 dark:text-gray-300 text-lg">
-        Manage your student data with ease. Use the sidebar to upload Excel files or view student details.
+        Manage students, upload data, allocate subjects, create or view subjects using the sidebar options.
       </p>
     </div>
     <div id="content-container" class="card p-8 rounded-2xl shadow-lg min-h-[600px]">
-      <p class="text-gray-600 dark:text-gray-300">Loading content...</p>
+      <p class="text-gray-600 dark:text-gray-300">Select an option from the sidebar to view content.</p>
     </div>
   </div>
 
   <!-- Modal for Upload Excel -->
-  <div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 transition-opacity duration-300">
+  <div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 transition-opacity">
     <div class="modal-content p-8 rounded-2xl w-full max-w-lg relative shadow-2xl">
-      <button id="close-modal" class="absolute top-4 right-4 text-2xl font-bold text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition">×</button>
+      <button id="close-upload-modal" class="absolute top-4 right-4 text-2xl font-bold text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition">×</button>
       <div id="upload-form-content">
         <h1 class="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">Upload Student Excel</h1>
-        <form method="POST" enctype="multipart/form-data" class="space-y-6" action="{% url 'upload-student-excel' %}">
+        <form id="upload-excel-form" method="POST" enctype="multipart/form-data" class="space-y-6" action="{% url 'upload-student-excel' %}">
           {% csrf_token %}
           <input type="file" name="student_file" accept=".xlsx" required class="block w-full text-sm text-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-          <button type="submit" class="w-full btn-primary text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-md">Upload</button>
+          <button type="submit" class="w-full btn-primary text-white font-semibold py-3 rounded-lg transition-all shadow-md">Upload</button>
         </form>
         <div class="text-center mt-4">
           <a href="{% url 'student-details' %}" class="text-blue-500 hover:underline dark:text-blue-400 text-sm font-medium">View Student Details</a>
@@ -100,7 +115,53 @@
     </div>
   </div>
 
+  <!-- Modal for Create Subject -->
+  <div id="create-subject-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 transition-opacity">
+    <div class="modal-content p-8 rounded-2xl w-full max-w-lg relative shadow-2xl">
+      <button id="close-subject-modal" class="absolute top-4 right-4 text-2xl font-bold text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition">×</button>
+      <div id="subject-form-content">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">Create New Subject</h1>
+        <form id="create-subject-form" method="POST" class="space-y-6">
+          {% csrf_token %}
+          <div>
+            <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject Code *</label>
+            <input type="text" name="code" id="code" required class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500">
+            <p id="code-error" class="error-message hidden"></p>
+          </div>
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject Name *</label>
+            <input type="text" name="name" id="name" required class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500">
+            <p id="name-error" class="error-message hidden"></p>
+          </div>
+          <div>
+            <label for="semester" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Semester *</label>
+            <select name="semester" id="semester" required class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500">
+              <option value="" disabled selected>Select Semester</option>
+              {% for i in "12345678" %}
+                <option value="{{ i }}">Semester {{ i }}</option>
+              {% endfor %}
+            </select>
+            <p id="semester-error" class="error-message hidden"></p>
+          </div>
+          <div>
+            <label for="stream" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Stream *</label>
+            <input type="text" name="stream" id="stream" required class="mt-1 block w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500">
+            <p id="stream-error" class="error-message hidden"></p>
+          </div>
+          <div>
+            <label class="flex items-center">
+              <input type="checkbox" name="is_elective" id="is_elective" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+              <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Is Elective</span>
+            </label>
+          </div>
+          <button type="submit" class="w-full btn-primary text-white font-semibold py-3 rounded-lg transition-all shadow-md">Create Subject</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Theme Toggle
     const themeToggle = document.getElementById('theme-toggle');
     const body = document.body;
     const sunIcon = document.getElementById('sun-icon');
@@ -121,52 +182,184 @@
       localStorage.setItem('theme', body.classList.contains('dark') ? 'dark' : 'light');
     });
 
+    // CSRF Token Handling
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Load Content
     function loadContent(url) {
-      fetch(url)
-        .then(res => res.text())
-        .then(html => {
-          document.getElementById('content-container').innerHTML = html;
+      $.get(url)
+        .done(html => {
+          $('#content-container').html(html);
         })
-        .catch(err => {
-          document.getElementById('content-container').innerHTML = "<p class='text-red-500 dark:text-red-400'>Failed to load content.</p>";
+        .fail(() => {
+          $('#content-container').html("<p class='text-red-500 dark:text-red-400'>Failed to load content.</p>");
         });
     }
 
-    function openUploadModal() {
-      document.getElementById('upload-modal').classList.remove('hidden');
+    // Modal Handling
+    function openModal(modalId) {
+      $(`#${modalId}`).removeClass('hidden').addClass('flex');
     }
 
-    document.getElementById('btn-student-details').addEventListener('click', () => {
+    function closeModal(modalId) {
+      $(`#${modalId}`).addClass('hidden').removeClass('flex');
+      // Clear errors when closing
+      $('.error-message').addClass('hidden').text('');
+    }
+
+    // Sidebar Button Handlers
+    $('#btn-student-details').click(() => {
       loadContent("{% url 'student-details' %}");
     });
 
-    document.getElementById('btn-upload-excel').addEventListener('click', () => {
-      openUploadModal();
+    $('#btn-upload-excel').click(() => {
+      openModal('upload-modal');
     });
 
-    document.getElementById('btn-student-choices').addEventListener('click', () => {
+    $('#btn-student-choices').click(() => {
       loadContent("{% url 'student_choices' %}");
     });
 
-    document.getElementById('btn-upload-allocation').addEventListener('click', () => {
+    $('#btn-upload-allocation').click(() => {
       loadContent("{% url 'upload_allocation' %}");
     });
 
-    document.getElementById('close-modal').addEventListener('click', () => {
-      document.getElementById('upload-modal').classList.add('hidden');
+    $('#btn-create-subject').click(() => {
+      openModal('create-subject-modal');
     });
 
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadContent("{% url 'student-details' %}");
+    $('#btn-list-subjects').click(() => {
+      loadContent("{% url 'list_subjects' %}");
     });
 
-    // Handle dynamic "View" button clicks for student choices
-    document.addEventListener('click', function(event) {
-      if (event.target.classList.contains('view-choices')) {
-        const semester = event.target.getAttribute('data-semester');
-        loadContent(`/admin/view-choices/${semester}/`);
+    // Modal Close Buttons
+    $('#close-upload-modal').click(() => {
+      closeModal('upload-modal');
+    });
+
+    $('#close-subject-modal').click(() => {
+      closeModal('create-subject-modal');
+    });
+
+    // Client-Side Form Validation
+    function validateSubjectForm() {
+      let isValid = true;
+      const code = $('#code').val().trim();
+      const name = $('#name').val().trim();
+      const semester = $('#semester').val();
+      const stream = $('#stream').val().trim();
+
+      // Reset error messages
+      $('.error-message').addClass('hidden').text('');
+
+      if (!code) {
+        $('#code-error').text('Subject code is required.').removeClass('hidden');
+        isValid = false;
       }
+      if (!name) {
+        $('#name-error').text('Subject name is required.').removeClass('hidden');
+        isValid = false;
+      }
+      if (!semester) {
+        $('#semester-error').text('Please select a semester.').removeClass('hidden');
+        isValid = false;
+      }
+      if (!stream) {
+        $('#stream-error').text('Stream is required.').removeClass('hidden');
+        isValid = false;
+      }
+
+      return isValid;
+    }
+
+    // Handle Create Subject Form Submission
+    $('#create-subject-form').submit(function(e) {
+      e.preventDefault();
+
+      // Client-side validation
+      if (!validateSubjectForm()) {
+        return;
+      }
+
+      const formData = {
+        code: $('#code').val().trim(),
+        name: $('#name').val().trim(),
+        semester: $('#semester').val(),
+        stream: $('#stream').val().trim(),
+        is_elective: $('#is_elective').is(':checked'),
+        csrfmiddlewaretoken: getCookie('csrftoken')
+      };
+
+      $.ajax({
+        url: "{% url 'add_subject' %}",
+        type: 'POST',
+        data: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(response) {
+          if (response.success) {
+            alert(response.message);
+            closeModal('create-subject-modal');
+            $('#create-subject-form')[0].reset();
+          } else {
+            alert(response.error || 'Failed to create subject.');
+          }
+        },
+        error: function(xhr) {
+          const response = xhr.responseJSON || {};
+          if (response.errors) {
+            try {
+              const errors = JSON.parse(response.errors);
+              for (const [field, messages] of Object.entries(errors)) {
+                $(`#${field}-error`).text(messages[0].message).removeClass('hidden');
+              }
+            } catch (e) {
+              console.error('Error parsing form errors:', e);
+            }
+          }
+          alert(response.error || 'An error occurred while creating the subject.');
+          console.error('AJAX error:', response);
+        }
+      });
+    });
+
+    // Handle Upload Excel Form Submission
+    $('#upload-excel-form').submit(function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      $.ajax({
+        url: "{% url 'upload-student-excel' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        success: function() {
+          closeModal('upload-modal');
+          loadContent("{% url 'student-details' %}");
+        },
+        error: function(xhr) {
+          alert('Failed to upload Excel file: ' + (xhr.responseJSON?.error || 'Unknown error'));
+        }
+      });
+    });
+
+    // Handle Dynamic View Choices
+    $(document).on('click', '.view-choices', function() {
+      const semester = $(this).data('semester');
+      loadContent(`/admin/view-choices/${semester}/`);
+    });
+
+    // Initial Load
+    $(document).ready(function() {
+      loadContent("{% url 'student-details' %}");
     });
   </script>
 </body>

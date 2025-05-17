@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+  <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Subject</h2>
+  <form method="POST" class="space-y-6">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="w-full btn-primary text-white font-semibold py-3 rounded-lg transition-all shadow-md">Create Subject</button>
+  </form>
+</div>
+{% endblock %}

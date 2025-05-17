@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="space-y-6">
+  <h2 class="text-2xl font-bold text-gray-900 dark:text-white">All Subjects</h2>
+  {% if subjects %}
+    {% regroup subjects by semester as semester_groups %}
+    {% for group in semester_groups %}
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Semester {{ group.grouper }}</h3>
+        {% if group.list %}
+          <div class="grid grid-cols-1 gap-4">
+            {% for subject in group.list %}
+              <div class="p-4 border rounded-lg">
+                <h4 class="font-bold text-gray-800 dark:text-gray-200">{{ subject.code }}</h4>
+                <p class="text-gray-700 dark:text-gray-300">{{ subject.name }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Stream: {{ subject.stream }}</p>
+                <p class="text-sm {% if subject.is_elective %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">
+                  {{ subject.is_elective|yesno:"Elective,Core" }}
+                </p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-gray-600 dark:text-gray-300">No subjects found for Semester {{ group.grouper }}.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-gray-600 dark:text-gray-300">No subjects found.</p>
+  {% endif %}
+</div>
+{% endblock %}

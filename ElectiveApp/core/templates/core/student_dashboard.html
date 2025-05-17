@@ -15,50 +15,71 @@
             <div class="text-center">
                 {% if electives_finalized %}
                     <!-- Success state -->
-                    <svg class="w-12 h-12 text-green-500 mx-auto" ...></svg>
-                    <h3 class="...">Electives Submitted!</h3>
-                    <p class="...">Your elective selections have been finalized.</p>
+                    <svg class="w-12 h-12 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <h3 class="text-lg font-bold text-gray-800 mt-2">Electives Submitted!</h3>
+                    <p class="text-gray-600 mt-1">Your elective selections have been finalized.</p>
                 {% else %}
                     <!-- Warning state -->
-                    <svg class="w-12 h-12 text-yellow-500 mx-auto" ...></svg>
-                    <h3 class="...">Electives Pending</h3>
-                    <p class="...">Please finalize your elective choices.</p>
+                    <svg class="w-12 h-12 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-lg font-bold text-gray-800 mt-2">Electives Pending</h3>
+                    <p class="text-gray-600 mt-1">Please finalize your elective choices.</p>
                 {% endif %}
-                <button onclick="closeModal()" ...>Continue</button>
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Continue</button>
             </div>
         </div>
     </div>
+
     <!-- Sidebar (Fixed) -->
     <div class="fixed top-0 left-0 w-64 h-screen bg-gradient-to-b from-blue-600 to-blue-800 text-white flex flex-col">
         <div class="p-4 text-xl font-bold">Student Portal</div>
         <nav class="flex-1 overflow-y-auto">
             {% if not electives_saved %}
                 <a href="#" id="dashboard-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
                     Dashboard
                 </a>
             {% endif %}
             <a href="#" id="core-subjects-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
                 Core Subjects
             </a>
             <a href="#" id="electives-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                </svg>
                 Choose Electives
             </a>
             <a href="#" id="allocation-results-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01"></path></svg>
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01"></path>
+                </svg>
                 Allocation Results
+            </a>
+            <a href="#" id="update-details-link" class="flex items-center p-4 hover:bg-blue-700 rounded-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-2.828 0l-1.414-1.414a2 2 0 010-2.828L13.586 5.586a2 2 0 012.828 0z"></path>
+                </svg>
+                Update Details
             </a>
         </nav>
         <a href="{% url 'logout' %}" class="p-4 hover:bg-blue-700 rounded-lg flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
             Logout
         </a>
     </div>
 
     <!-- Header (Fixed) -->
-    <header class="fixed top-2 left-[264px] right-2  h-[94px] bg-white shadow flex justify-between items-center px-4 border-b border-gray-200 rounded-lg">
+    <header class="fixed top-2 left-[264px] right-2 h-[94px] bg-white shadow flex justify-between items-center px-4 border-b border-gray-200 rounded-lg">
         <div>
             <h1 class="text-xl font-bold text-blue-700">
                 Welcome, <span id="welcome-name"></span>
@@ -67,16 +88,14 @@
                 <p class="text-sm text-gray-600">Roll: {{ student.roll }}</p>
             {% endif %}
         </div>
-        <!-- Add this updated right-side section -->
         <div class="text-right">
             <p class="text-gray-800">{{ student.user.email }}</p>
-            <p class="text-sm text-gray-600">{{ student.get_department_display }} | Semester {{ student.semester }}</p>
+            <p class="text-sm text-gray-600">{{ student.get_department_display|default:"Not set" }} | Semester {{ student.semester|default:"Not set" }}</p>
         </div>
     </header>
 
     <!-- Main Content (Scrollable) -->
-    <main class="ml-64 mt-16 p-6 bg-gray-50 mt-[95px]" style="height: calc(100vh - 4rem); overflow-y: auto;">
-
+    <main class="ml-64 mt-[90px] p-6 bg-gray-50" style="height: calc(100vh - 4rem); overflow-y:">
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -86,20 +105,25 @@
                 {% endfor %}
             </div>
         {% endif %}
+
+        <!-- Dashboard Section -->
         <div id="content-area" class="hidden">
             <h2 class="text-2xl font-bold mb-4 text-blue-600">Dashboard</h2>
-            <p class="text-gray-700">Welcome to your student portal. Use the sidebar to view core subjects or choose electives.</p>
+            <p class="text-gray-700">Welcome to your student portal. Use the sidebar to view core subjects, choose electives, or update your details.</p>
         </div>
+
         <!-- Core Subjects Section -->
         <div id="core-subjects-section" class="hidden">
             <h2 class="text-2xl font-bold mb-4 text-blue-600">Core Subjects</h2>
             <div id="core-subjects-list" class="grid grid-cols-1 gap-4"></div>
         </div>
+
         <!-- Electives Section -->
         <div id="electives-panel" class="hidden">
             <h2 class="text-2xl font-bold mb-4 text-blue-600">Electives</h2>
             <div id="electives-content" class="space-y-4"></div>
         </div>
+
         <!-- Allocation Results Section -->
         <div id="allocation-results-section" class="hidden">
             <h2 class="text-2xl font-bold mb-4 text-blue-600">Your Subject Allocations</h2>
@@ -140,6 +164,37 @@
                 <p class="text-gray-700">No allocation results available yet.</p>
             {% endif %}
         </div>
+
+        <!-- Update Details Section -->
+        <div id="update-details-section" class="hidden">
+            <h2 class="text-2xl font-bold mb-4 text-blue-600">Update Your Details</h2>
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-md">
+                <form method="POST" action="{% url 'reselect_department_semester' %}" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label for="department" class="block text-sm font-medium text-gray-700">Department *</label>
+                        <select name="department" id="department" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="" disabled {% if not student.department %}selected{% endif %}>Select Department</option>
+                            {% for value, label in departments %}
+                                <option value="{{ value }}" {% if student.department == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="semester" class="block text-sm font-medium text-gray-700">Semester *</label>
+                        <select name="semester" id="semester" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="" disabled {% if not student.semester %}selected{% endif %}>Select Semester</option>
+                            {% for value, label in semesters %}
+                                <option value="{{ value }}" {% if student.semester == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200">
+                        Save and Continue
+                    </button>
+                </form>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -149,26 +204,35 @@
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
-    
-        // Auto-show modal after 1 second
+
+        // Modal Handling
         setTimeout(() => {
             if (!sessionStorage.getItem('modalClosed')) {
-                document.getElementById('status-modal').classList.remove('hidden');
+                const modal = document.getElementById('status-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
             }
         }, 1000);
-    
+
         function closeModal() {
-            document.getElementById('status-modal').classList.add('hidden');
-            sessionStorage.setItem('modalClosed', 'true');
+            const modal = document.getElementById('status-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                sessionStorage.setItem('modalClosed', 'true');
+            }
         }
-    
+
         $(document).ready(function() {
             // Extract and display the name in the welcome message
             const email = '{{ student.user.email }}';
-            const name = email.split('@')[0].split('.')[1];
+            const nameParts = email.split('@')[0].split('.');
+            const name = nameParts.length > 1 ? nameParts[1] : nameParts[0];
             const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
             $('#welcome-name').text(capitalizedName);
-    
+
             // Function to show core subjects
             function showCoreSubjects() {
                 $.get('{% url 'fetch_core_subjects' %}', function(data) {
@@ -182,35 +246,23 @@
                             <div class="p-4 bg-white shadow-md rounded-lg">
                                 <h3 class="font-bold text-gray-800">${subject.code}</h3>
                                 <p class="text-gray-700">${subject.name}</p>
-                                <p class="text-sm text-gray-500">${subject.stream === "Core CS" ? "Theory" : "Labratory"} Subject</p>
+                                <p class="text-sm text-gray-500">${subject.stream === "Core CS" ? "Theory" : "Laboratory"} Subject</p>
                             </div>
                         `;
                     });
                     $('#core-subjects-list').html(html);
                 });
             }
-    
+
             // Function to show electives
             function showElectives() {
                 $.get('{% url 'fetch_electives' %}', function(data) {
                     let html = '';
                     if (data.finalized) {
-                        // Display finalized electives
                         html += '<div class="bg-green-50 p-4 rounded-lg mb-4">';
                         html += '<h3 class="font-bold text-green-800">Electives Finalized</h3>';
                         html += '<p class="text-green-700">Your choices have been submitted and cannot be modified.</p></div>';
-                        html += '<h3 class="font-bold mb-2 text-gray-800">Finalized Electives</h3>';
-                        data.chosen.forEach(subject => {
-                            html += `
-                                <div class="p-4 bg-white shadow-md rounded-lg mb-2">
-                                    <h4 class="font-bold text-gray-800">${subject.code}</h4>
-                                    <p class="text-gray-700">${subject.name}</p>
-                                    <p class="text-sm text-gray-500">Stream: ${subject.stream}</p>
-                                </div>
-                            `;
-                        });
                     } else {
-                        // Build elective selection UI
                         html += '<h3 class="font-bold mb-4 text-gray-800">Choose Electives</h3>';
                         for (const [stream, subjects] of Object.entries(data.electives)) {
                             html += `<div class="bg-white p-4 rounded-lg shadow mb-4">`;
@@ -243,22 +295,28 @@
                     $('#electives-content').html(html);
                 });
             }
-    
+            $('#electives-link').click(function(e) {
+                e.preventDefault();
+                $('#content-area, #core-subjects-section, #allocation-results-section, #update-details-section').addClass('hidden');
+                $('#electives-panel').removeClass('hidden');
+                showElectives();
+            });
+
             // Consolidated handler for save and confirm actions
             $(document).on('click', '#save-electives, #confirm-electives', function() {
                 const isConfirm = $(this).attr('id') === 'confirm-electives';
                 const confirmMessage = isConfirm 
                     ? "Are you sure you want to finalize your choices? This cannot be undone." 
                     : "Save draft selections?";
-    
+
                 if (!confirm(confirmMessage)) return;
-    
+
                 const selectedCodes = $('.elective-checkbox:checked').map(function() {
                     return this.value;
                 }).get();
-    
+
                 const csrftoken = getCookie('csrftoken');
-    
+
                 $.ajax({
                     url: '{% url 'save_elective_selection' %}',
                     type: 'POST',
@@ -278,60 +336,43 @@
                     }
                 });
             });
-    
+
             // Sidebar link handlers
             $('#dashboard-link').click(function(e) {
                 e.preventDefault();
-                $('#core-subjects-section, #electives-panel, #allocation-results-section').addClass('hidden');
+                $('#core-subjects-section, #electives-panel, #allocation-results-section, #update-details-section').addClass('hidden');
                 $('#content-area').removeClass('hidden');
             });
-    
+
             $('#core-subjects-link').click(function(e) {
                 e.preventDefault();
-                $('#content-area, #electives-panel, #allocation-results-section').addClass('hidden');
+                $('#content-area, #electives-panel, #allocation-results-section, #update-details-section').addClass('hidden');
                 $('#core-subjects-section').removeClass('hidden');
                 showCoreSubjects();
             });
-    
+
             $('#electives-link').click(function(e) {
                 e.preventDefault();
-                $('#content-area, #core-subjects-section, #allocation-results-section').addClass('hidden');
+                $('#content-area, #core-subjects-section, #allocation-results-section, #update-details-section').addClass('hidden');
                 $('#electives-panel').removeClass('hidden');
                 showElectives();
             });
+
             $('#allocation-results-link').click(function(e) {
                 e.preventDefault();
-                $('#content-area, #core-subjects-section, #electives-panel').addClass('hidden');
+                $('#content-area, #core-subjects-section, #electives-panel, #update-details-section').addClass('hidden');
                 $('#allocation-results-section').removeClass('hidden');
             });
-            // Handle edit electives
-            $(document).on('click', '#edit-electives', function() {
-                showElectives('edit');
+
+            $('#update-details-link').click(function(e) {
+                e.preventDefault();
+                $('#content-area, #core-subjects-section, #electives-panel, #allocation-results-section').addClass('hidden');
+                $('#update-details-section').removeClass('hidden');
             });
-    
-            // Show core subjects by default
-            $('#core-subjects-link').click();
+
+            // Show dashboard by default
+            $('#dashboard-link').click();
         });
-    
-        // Auto-show modal after 1 second
-        setTimeout(() => {
-            if (!sessionStorage.getItem('modalClosed')) {
-                const modal = document.getElementById('status-modal');
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex'); // Add flex display
-                }
-            }
-        }, 1000);
-    
-        function closeModal() {
-            const modal = document.getElementById('status-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                sessionStorage.setItem('modalClosed', 'true');
-            }
-        }
     </script>
 </body>
 </html>

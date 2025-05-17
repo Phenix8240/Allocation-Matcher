@@ -67,6 +67,7 @@ class User(AbstractUser):
         verbose_name = _("User")
         verbose_name_plural = _("Users")
 
+
 class Student(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -83,7 +84,7 @@ class Student(models.Model):
         max_length=10,
         blank=True,
         unique=False,
-        null=True,  # Ensures roll is optional in the database
+        null=True,
         help_text=_("Student's roll number, if assigned.")
     )
     department = models.CharField(
@@ -117,11 +118,20 @@ class Student(models.Model):
     )
     elective_finalized = models.BooleanField(
         default=False,
-        help_text=_("If True it means the electives are finalized.")
+        help_text=_("If True, the student's electives are finalized.")
     )
 
     def __str__(self):
         return f"{self.user.email} — {self.roll or 'no roll'}"
+
+    def reset_electives(self):
+        """
+        Reset elective finalization and clear associated selections and allocation results.
+        """
+        self.elective_finalized = False
+        self.elective_selections.all().delete()  # Clear ElectiveSelection records
+        self.allocation_results.filter(semester=self.semester).delete()  # Clear AllocationResult records
+        self.save()
 
     class Meta:
         verbose_name = _("Student")

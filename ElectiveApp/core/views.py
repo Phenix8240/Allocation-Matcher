@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import io
 import re
+from collections import defaultdict
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
@@ -12,16 +13,23 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import JsonResponse
-from .forms import UploadFileForm, UploadAllocationForm 
+from .forms import UploadFileForm, UploadAllocationForm,AddSubjectForm
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, Subject, ElectiveSelection, AllocationResult
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.db import transaction
 import logging
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 logger = logging.getLogger(__name__)
 
+class TokenGenerator(PasswordResetTokenGenerator):
+    def _make_hash_value(self, user, timestamp):
+        return str(user.pk) + str(timestamp) + str(user.is_active)
 
+password_reset_token = TokenGenerator()
 User = get_user_model()
 
 def password_generator(length=8):
@@ -122,13 +130,15 @@ def login_view(request):
 @ensure_csrf_cookie
 def student_dashboard(request):
     student = request.user.student
-    if not student.department or not student.semester or not student.roll:
+    if not student.department or not student.semester:
         return redirect('select_department_semester')
-    allocation_results = AllocationResult.objects.filter(student=student, semester=student.semester)    
+    allocation_results = AllocationResult.objects.filter(student=student, semester=student.semester)
     return render(request, 'core/student_dashboard.html', {
         'student': student,
         'electives_finalized': student.elective_finalized,
         'allocation_results': allocation_results,
+        'departments': Student._meta.get_field('department').choices,
+        'semesters': Student._meta.get_field('semester').choices,
     })
 
 @login_required
@@ -143,6 +153,66 @@ def student_details(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = User.objects.get(email=email)
+            token = password_reset_token.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            reset_link = request.build_absolute_uri(f"/password-reset-confirm/{uid}/{token}/")
+            send_mail(
+                subject="Password Reset Request",
+                message=f"Click the link to reset your password: {reset_link}\nThis link will expire in 1 hour.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            messages.success(request, "Password reset link sent to your email.")
+            return redirect('login')
+        except User.DoesNotExist:
+            messages.error(request, "No account found with this email.")
+        except Exception as e:
+            logger.error(f"Error sending reset email for {email}: {str(e)}")
+            messages.error(request, f"Failed to send reset link: {str(e)}")
+    return render(request, 'core/password_reset_request.html')
+
+def password_reset_confirm(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    validlink = user is not None and password_reset_token.check_token(user, token)
+
+    if request.method == 'POST' and validlink:
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+        elif len(password) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
+        else:
+            try:
+                user.set_password(password)
+                user.save()
+                if hasattr(user, 'student'):
+                    user.student.plain_password = password
+                    user.student.save()
+                messages.success(request, "Password reset successfully. You can now log in.")
+                return redirect('login')
+            except Exception as e:
+                logger.error(f"Error resetting password for user {user.email}: {str(e)}")
+                messages.error(request, f"Failed to reset password: {str(e)}")
+
+    return render(request, 'core/password_reset_confirm.html', {
+        'validlink': validlink,
+        'uidb64': uidb64,
+        'token': token
+    })
+
 
 @login_required
 def select_department_semester(request):
@@ -405,12 +475,8 @@ def upload_allocation(request):
                     return redirect('upload_allocation')
                 logger.info("Number of student rows: %d", len(df))
 
-                elective_columns = [col for col in df.columns if 'elective' in col.lower()]
-                if not elective_columns:
-                    messages.error(request, "No elective columns found in the Excel file.")
-                    logger.error("No elective columns found.")
-                    return redirect('upload_allocation')
-                logger.info("Elective columns detected: %s", elective_columns)
+                # Identify elective columns (all columns except roll number)
+                elective_columns = [col for col in df.columns if col != roll_col]
 
                 students = Student.objects.filter(semester=semester)
                 student_map = {str(s.roll).strip(): s for s in students}
@@ -435,12 +501,13 @@ def upload_allocation(request):
                     chosen_by_stream = {sel.subject.stream: sel.subject for sel in chosen_selections}
                     logger.info("Student %s chosen streams: %s", roll, list(chosen_by_stream.keys()))
 
+                    # Dictionary to track allocated subjects per stream
+                    stream_subject_map = defaultdict(list)
+
                     for col in elective_columns:
                         cell_value = str(row[col]).strip()
                         logger.info("Row %d, Col '%s': Cell value = '%s'", index+4, col, cell_value)
                         if not cell_value:
-                            errors.append(f"Row {index+4}, Col '{col}': No subject code provided")
-                            logger.warning("No subject code in row %d, col '%s'", index+4, col)
                             continue
 
                         subject_code = normalize_code(cell_value)
@@ -456,8 +523,16 @@ def upload_allocation(request):
                             continue
 
                         stream = allocated_subject.stream
-                        logger.info("Allocated subject %s in stream %s (from code %s)", allocated_subject, stream, subject_code)
+                        stream_subject_map[stream].append(allocated_subject)
 
+                    # Process allocations for each stream
+                    for stream, subjects in stream_subject_map.items():
+                        if len(subjects) > 1:
+                            errors.append(f"Row {index+4}, Stream '{stream}': Multiple subjects allocated: {', '.join([s.code for s in subjects])}")
+                            logger.warning("Multiple subjects for stream '%s' for roll %s", stream, roll)
+                            continue
+
+                        allocated_subject = subjects[0]
                         chosen_subject = chosen_by_stream.get(stream)
                         if chosen_subject is None:
                             logger.warning("Student %s has no chosen subject for stream %s", roll, stream)
@@ -501,10 +576,214 @@ def upload_allocation(request):
 
     return render(request, 'core/upload_allocation.html', {'form': form})
 
-
 @login_required
 def allocation_results(request, semester):
     if not request.user.is_staff:
         return redirect('student_dashboard')
     results = AllocationResult.objects.filter(semester=semester).select_related('student', 'allocated_subject').order_by('student__roll', 'stream')
     return render(request, 'core/allocation_results.html', {'results': results, 'semester': semester})
+
+@staff_member_required
+def create_student(request):
+    if request.method == 'POST':
+        form = CreateStudentForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            if User.objects.filter(email=email).exists():
+                messages.error(request, f"User with email {email} already exists.")
+                return redirect('create_student')
+
+            pwd = password_generator()
+            try:
+                user = User.objects.create_user(email=email, password=pwd, role='student')
+                Student.objects.create(user=user, plain_password=pwd)
+                send_mail(
+                    subject="Your Portal Credentials",
+                    message=f"Username: {email}\nPassword: {pwd}",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                messages.success(request, f"Student created for {email} and credentials sent.")
+                return redirect('student_details')
+            except Exception as e:
+                messages.error(request, f"Failed to create student for {email}: {e}")
+                return redirect('create_student')
+    else:
+        form = CreateStudentForm()
+
+    return render(request, 'core/create_student.html', {'form': form})
+
+@staff_member_required
+def reset_student_password(request, student_id):
+    try:
+        student = Student.objects.get(id=student_id)
+        new_password = password_generator()
+        student.user.set_password(new_password)
+        student.user.save()
+        student.plain_password = new_password
+        student.save()
+
+        send_mail(
+            subject="Your Portal Password Has Been Reset",
+            message=f"Username: {student.user.email}\nNew Password: {new_password}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.user.email],
+            fail_silently=False,
+        )
+        messages.success(request, f"Password reset for {student.user.email} and new credentials sent.")
+    except Student.DoesNotExist:
+        messages.error(request, "Student not found.")
+    except Exception as e:
+        messages.error(request, f"Failed to reset password: {e}")
+    return redirect('student_details')
+
+@login_required
+def reselect_department_semester(request):
+    student = request.user.student
+    if request.method == 'POST':
+        department = request.POST.get('department')
+        semester = request.POST.get('semester')
+        try:
+            if not department or not semester:
+                raise ValueError("Both department and semester are required")
+
+            # Check if department or semester has changed
+            details_changed = student.department != department or student.semester != semester
+
+            # Update student details
+            student.department = department
+            student.semester = semester
+            student.first_login_info_submitted = True
+
+            if details_changed:
+                # Reset electives using model method
+                logger.debug(f"Resetting electives for student {student.user.email}")
+                student.reset_electives()  # Resets elective_finalized and clears selections/results
+                messages.success(request, "Profile updated. Please reselect your electives.")
+                logger.info(f"Student {student.user.email} updated department to {department}, semester to {semester}, elective_finalized reset to {student.elective_finalized}")
+                return redirect('student_dashboard')  # Redirect to dashboard
+            else:
+                student.save()
+                messages.success(request, "Profile information updated successfully.")
+                logger.debug(f"No changes for student {student.user.email}")
+                return redirect('student_dashboard')
+
+        except Exception as e:
+            logger.error(f"Error updating profile for {student.user.email}: {str(e)}")
+            messages.error(request, str(e))
+            return render(request, 'core/select_department_semester.html', {
+                'student': student,
+                'departments': Student._meta.get_field('department').choices,
+                'semesters': Student._meta.get_field('semester').choices,
+            })
+
+    return render(request, 'core/select_department_semester.html', {
+        'student': student,
+        'departments': Student._meta.get_field('department').choices,
+        'semesters': Student._meta.get_field('semester').choices,
+    })
+
+@staff_member_required
+def add_subject(request):
+    if request.method == 'POST':
+        form = AddSubjectForm(request.POST)
+        if form.is_valid():
+            try:
+                subject = form.save()
+                logger.info(f"Subject {subject.code} created by {request.user.email}")
+                messages.success(request, f"Subject {subject.code} added successfully.")
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': f"Subject {subject.code} added successfully."
+                    })
+                return redirect('admin_dashboard')
+            except Exception as e:
+                logger.error(f"Failed to save subject: {str(e)}")
+                error_msg = f"Failed to add subject: {str(e)}"
+                messages.error(request, error_msg)
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': error_msg
+                    }, status=400)
+        else:
+            error_msg = "Invalid form submission. Please check the fields."
+            logger.warning(f"Form validation failed: {form.errors.as_json()}")
+            messages.error(request, error_msg)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg,
+                    'errors': form.errors.as_json()
+                }, status=400)
+        return render(request, 'core/add_subject.html', {'form': form})
+    else:
+        form = AddSubjectForm()
+    return render(request, 'core/add_subject.html', {'form': form})
+
+@staff_member_required
+def list_subjects(request):
+    subjects = Subject.objects.all().order_by('semester', 'code')
+    semesters = sorted(set(subjects.values_list('semester', flat=True)))
+    logger.debug(f"Subjects fetched: {subjects.count()}, Semesters: {semesters}")
+    return render(request, 'core/list_subjects.html', {
+        'subjects': subjects,
+        'semesters': semesters
+    })
+
+@staff_member_required
+def create_student(request):
+    if request.method == 'POST':
+        form = CreateStudentForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            if User.objects.filter(email=email).exists():
+                messages.error(request, f"User with email {email} already exists.")
+                return redirect('create_student')
+
+            pwd = password_generator()
+            try:
+                user = User.objects.create_user(email=email, password=pwd, role='student')
+                Student.objects.create(user=user, plain_password=pwd)
+                send_mail(
+                    subject="Your Portal Credentials",
+                    message=f"Username: {email}\nPassword: {pwd}",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                messages.success(request, f"Student created for {email} and credentials sent.")
+                return redirect('student_details')
+            except Exception as e:
+                messages.error(request, f"Failed to create student for {email}: {e}")
+                return redirect('create_student')
+    else:
+        form = CreateStudentForm()
+
+    return render(request, 'core/create_student.html', {'form': form})
+
+@staff_member_required
+def reset_student_password(request, student_id):
+    try:
+        student = Student.objects.get(id=student_id)
+        new_password = password_generator()
+        student.user.set_password(new_password)
+        student.user.save()
+        student.plain_password = new_password
+        student.save()
+
+        send_mail(
+            subject="Your Portal Password Has Been Reset",
+            message=f"Username: {student.user.email}\nNew Password: {new_password}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.user.email],
+            fail_silently=False,
+        )
+        messages.success(request, f"Password reset for {student.user.email} and new credentials sent.")
+    except Student.DoesNotExist:
+        messages.error(request, "Student not found.")
+    except Exception as e:
+        messages.error(request, f"Failed to reset password: {e}")
+    return redirect('student_details')
