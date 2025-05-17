@@ -6,6 +6,7 @@ import json
 import io
 import re
 from django.views.decorators.csrf import csrf_protect
+from django.core.exceptions import ValidationError
 from collections import defaultdict
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -14,7 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import JsonResponse
-from .forms import UploadFileForm, UploadAllocationForm,AddSubjectForm
+from .forms import UploadFileForm, UploadAllocationForm,AddSubjectForm, AddStudentForm
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, Subject, ElectiveSelection, AllocationResult
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
@@ -146,7 +147,7 @@ def student_dashboard(request):
 def admin_dashboard(request):
     return render(request, 'core/admin_dashboard.html', {'user': request.user})
 
-@login_required
+@staff_member_required
 def student_details(request):
     students = Student.objects.select_related('user').all()
     return render(request, 'core/student_details.html', {'students': students})
@@ -585,35 +586,46 @@ def allocation_results(request, semester):
     return render(request, 'core/allocation_results.html', {'results': results, 'semester': semester})
 
 @staff_member_required
-def create_student(request):
+def add_student(request):
     if request.method == 'POST':
-        form = CreateStudentForm(request.POST)
+        form = AddStudentForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data['email']
+            email = form.cleaned_data['email'].strip()
             if User.objects.filter(email=email).exists():
-                messages.error(request, f"User with email {email} already exists.")
-                return redirect('create_student')
+                messages.error(request, f"A user with email {email} already exists.")
+                logger.warning(f"Attempt to create duplicate student {email} by {request.user.email}")
+                return render(request, 'core/add_student.html', {'form': form})
 
             pwd = password_generator()
             try:
-                user = User.objects.create_user(email=email, password=pwd, role='student')
-                Student.objects.create(user=user, plain_password=pwd)
-                send_mail(
-                    subject="Your Portal Credentials",
-                    message=f"Username: {email}\nPassword: {pwd}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    fail_silently=False,
-                )
-                messages.success(request, f"Student created for {email} and credentials sent.")
+                with transaction.atomic():
+                    user = User.objects.create_user(email=email, password=pwd, role='student')
+                    try:
+                        Student.objects.create(user=user, plain_password=pwd)
+                    except Exception as e:
+                        user.delete()  # Clean up if Student creation fails
+                        raise
+                    send_mail(
+                        subject="Your Portal Credentials",
+                        message=f"Username: {email}\nPassword: {pwd}\n\nPlease log in and update your password.",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[email],
+                        fail_silently=False,
+                    )
+                messages.success(request, f"Student {email} created successfully. Credentials sent to their email.")
+                logger.info(f"Student {email} created by {request.user.email}")
                 return redirect('student_details')
             except Exception as e:
-                messages.error(request, f"Failed to create student for {email}: {e}")
-                return redirect('create_student')
+                messages.error(request, f"Failed to create student {email}: {str(e)}")
+                logger.error(f"Error creating student {email}: {str(e)}")
+                return render(request, 'core/add_student.html', {'form': form})
+        else:
+            messages.error(request, "Please correct the errors in the form.")
     else:
-        form = CreateStudentForm()
+        form = AddStudentForm()
+    
+    return render(request, 'core/add_student.html', {'form': form})
 
-    return render(request, 'core/create_student.html', {'form': form})
 
 @staff_member_required
 def reset_student_password(request, student_id):

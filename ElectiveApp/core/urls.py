@@ -19,6 +19,7 @@ urlpatterns = [
     path('save-elective-selection/', views.save_elective_selection, name='save_elective_selection'),
     path('reset-student-password/<int:student_id>/', views.reset_student_password, name='reset_student_password'),
     path('create-student/', views.create_student, name='create_student'),
+    path('add_student/', views.add_student, name='add_student'),
     path('admin/student-choices/', views.student_choices, name='student_choices'),
     path('admin/view-choices/<str:semester>/', views.view_choices, name='view_choices'),
     path('admin/download-choices/<str:semester>/', views.download_choices, name='download_choices'),

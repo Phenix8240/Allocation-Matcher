@@ -2,6 +2,23 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from core.models import *
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
+
+class AddStudentForm(forms.Form):
+    email = forms.EmailField(
+        label='Email',
+        widget=forms.EmailInput(attrs={
+            'class': 'mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500',
+            'placeholder': 'e.g., it23.student@stcet.ac.in'
+        })
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exists():
+            raise ValidationError("A user with this email already exists.")
+        return email
+
 class UploadFileForm(forms.Form):
     student_file = forms.FileField(
         label="Select an Excel file (.xlsx)",
