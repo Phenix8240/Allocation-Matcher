@@ -138,3 +138,18 @@ EMAIL_HOST_PASSWORD = 'qpwhbopqdzlqihbt'
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '__name__': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+        },
+    },
+}

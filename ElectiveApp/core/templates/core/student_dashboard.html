@@ -231,10 +231,10 @@
                         }
                         html += `
                             <div class="mt-6 space-x-4">
-                                <button id="save-electives" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                <button id="save-electives" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" action="{% url 'save_elective_selection' %}">
                                     Save Draft
                                 </button>
-                                <button id="confirm-electives" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                                <button id="confirm-electives" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700" action="{% url 'save_elective_selection' %}">
                                     Finalize Selection
                                 </button>
                             </div>

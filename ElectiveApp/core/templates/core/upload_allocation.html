@@ -9,7 +9,7 @@
           {% endfor %}
       </div>
   {% endif %}
-  <form method="POST" enctype="multipart/form-data" class="space-y-4">
+  <form method="POST" enctype="multipart/form-data" class="space-y-4" action="{% url 'upload_allocation' %}">
     {% csrf_token %}
     {{ form.as_p }}  <!-- Renders all form fields, including semester -->
     <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200">Upload</button>

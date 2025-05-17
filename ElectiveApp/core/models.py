@@ -222,7 +222,6 @@ class AllocationResult(models.Model):
         help_text=_("Subject allocated to the student for this stream.")
     )
     is_match = models.BooleanField(
-        default=False,
         help_text=_("Indicates if the chosen and allocated subjects match.")
     )
 

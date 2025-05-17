@@ -3,7 +3,8 @@ import random
 import string
 import pandas as pd
 import json
-import io,re
+import io
+import re
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
@@ -11,11 +12,15 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import JsonResponse
-from .forms import UploadFileForm,UploadAllocationForm 
+from .forms import UploadFileForm, UploadAllocationForm 
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Student, Subject, ElectiveSelection, AllocationResult
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db import transaction
+import logging
+logger = logging.getLogger(__name__)
+
 
 User = get_user_model()
 
@@ -34,11 +39,9 @@ def upload_student_excel(request):
                 messages.error(request, f"Cannot read Excel file: {e}")
                 return redirect('upload-student-excel')
 
-            # Normalize column names to lowercase for case-insensitive comparison
             columns = [col.strip().lower() for col in df.columns]
             original_columns = df.columns.tolist()
 
-            # Find the email column
             email_column = None
             for i, col in enumerate(columns):
                 if col == 'email':
@@ -62,7 +65,7 @@ def upload_student_excel(request):
                     skipped += 1
                     continue
                 
-                pwd = password_generator()  # Ensure this function is defined elsewhere
+                pwd = password_generator()
 
                 try:
                     user = User.objects.create_user(email=email, password=pwd)
@@ -75,7 +78,7 @@ def upload_student_excel(request):
                     messages.success(request, f"Created student for {email}")
                 except Exception as e:
                     messages.error(request, f"Failed to create Student for {email}: {e}")
-                    user.delete()  # Roll back User creation if Student fails
+                    user.delete()
                     continue
 
                 try:
@@ -153,7 +156,6 @@ def select_department_semester(request):
             if not department or not semester:
                 raise ValueError("Both department and semester are required")
             
-            # Validate roll number uniqueness if provided
             if roll:
                 if Student.objects.exclude(pk=student.pk).filter(roll=roll).exists():
                     raise ValueError("This roll number is already taken")
@@ -175,7 +177,6 @@ def select_department_semester(request):
         'semesters': Student._meta.get_field('semester').choices,
     })
 
-
 @login_required
 def fetch_core_subjects(request):
     student = request.user.student
@@ -183,12 +184,12 @@ def fetch_core_subjects(request):
         return JsonResponse({'error': 'Semester not set'}, status=400)
     
     try:
-        semester = int(student.semester)  # Convert to integer
+        semester = int(student.semester)
     except ValueError:
         return JsonResponse({'error': 'Invalid semester value'}, status=400)
     
     core_subjects = Subject.objects.filter(
-        semester=semester,  # Now comparing integer to integer
+        semester=semester,
         is_elective=False
     ).values('code', 'name', 'stream')
     
@@ -200,7 +201,6 @@ def fetch_electives(request):
     if not student.semester:
         return JsonResponse({'error': 'Semester not set'}, status=400)
     
-    # Corrected typo: electives_finalized -> elective_finalized
     if student.elective_finalized:
         chosen = ElectiveSelection.objects.filter(student=student)
         return JsonResponse({
@@ -212,16 +212,13 @@ def fetch_electives(request):
             'finalized': True
         })
     
-    # Handle non-finalized state
     try:
         semester = int(student.semester)
     except ValueError:
         return JsonResponse({'error': 'Invalid semester value'}, status=400)
     
-    # Fetch electives for the semester
     electives = Subject.objects.filter(semester=semester, is_elective=True)
     
-    # Group by stream
     grouped_electives = {}
     for elective in electives:
         stream = elective.stream
@@ -232,7 +229,6 @@ def fetch_electives(request):
             'name': elective.name,
         })
     
-    # Get selected codes
     selected_codes = list(ElectiveSelection.objects.filter(
         student=student
     ).values_list('subject__code', flat=True))
@@ -242,13 +238,14 @@ def fetch_electives(request):
         'selected': selected_codes,
         'finalized': False
     })
+
 @login_required
 def save_elective_selection(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Invalid method'}, status=405)
     
     student = request.user.student
-    if student.elective_finalized:  # Corrected field name
+    if student.elective_finalized:
         return JsonResponse({'error': 'Electives have been finalized and cannot be modified.'}, status=400)
 
     try:
@@ -256,7 +253,6 @@ def save_elective_selection(request):
         selected_codes = data.get('selected_codes', [])
         action = data.get('action', 'save')
 
-        # Validation: Ensure selected codes are valid electives for the student's semester
         valid_subjects = Subject.objects.filter(
             code__in=selected_codes, 
             is_elective=True, 
@@ -266,21 +262,18 @@ def save_elective_selection(request):
         if len(valid_subjects) != len(selected_codes):
             return JsonResponse({'error': 'Invalid subject selection'}, status=400)
 
-        # Save new selections
         ElectiveSelection.objects.filter(student=student).delete()
         for subject in valid_subjects:
             ElectiveSelection.objects.create(student=student, subject=subject)
 
-        # Finalize if action is confirm
         if action == 'confirm':
-            student.elective_finalized = True  # Corrected from electives_finalized
+            student.elective_finalized = True
             student.save()
 
         return JsonResponse({'message': 'Elective selections saved successfully'})
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
-
 
 @staff_member_required
 def student_choices(request):
@@ -289,7 +282,6 @@ def student_choices(request):
 
 @login_required
 def view_choices(request, semester):
-    """Render a table of elective choices for a given semester."""
     if not request.user.is_staff:
         return redirect('student_dashboard')
     
@@ -305,10 +297,8 @@ def view_choices(request, semester):
             'message': 'No students have finalized choices for this semester.'
         })
 
-    # Get unique streams for electives in this semester
     streams = Subject.objects.filter(semester=semester_int, is_elective=True).values_list('stream', flat=True).distinct()
 
-    # Prepare data for the table
     data = []
     for student in students:
         row = {'roll': student.roll}
@@ -327,7 +317,6 @@ def view_choices(request, semester):
 
 @login_required
 def download_choices(request, semester):
-    """Generate and serve an Excel file with elective choices for a given semester."""
     if not request.user.is_staff:
         return redirect('student_dashboard')
     
@@ -342,7 +331,6 @@ def download_choices(request, semester):
 
     streams = Subject.objects.filter(semester=semester_int, is_elective=True).values_list('stream', flat=True).distinct()
 
-    # Prepare data for Excel
     data = []
     for student in students:
         row = {'Roll Number': student.roll}
@@ -352,14 +340,12 @@ def download_choices(request, semester):
             row[stream] = selections.get(stream, 'N/A')
         data.append(row)
 
-    # Create DataFrame and Excel file in memory
     df = pd.DataFrame(data)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name=f'Semester {semester}')
     output.seek(0)
 
-    # Prepare response
     response = HttpResponse(
         output,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -367,30 +353,8 @@ def download_choices(request, semester):
     response['Content-Disposition'] = f'attachment; filename="choices_semester_{semester}.xlsx"'
     return response
 
-def clean_subject_code(value):
-    if pd.isna(value) or not value:
-        return None
-    value = str(value).strip()
-    match = re.match(r'^([A-Z0-9-]+)', value)
-    return match.group(1) if match else None
 def find_roll_column(columns):
-    roll_patterns = [
-        r'roll\s*(number|no\.?|num)?\s*(id)?',
-        r'student\s*(roll|id|number|no\.?)',
-        r'roll\s*id',
-        r'roll',
-        r'registration\s*(no\.?|number)',
-        r'reg\s*no\.?'
-    ]
-    for col in columns:
-        col_lower = str(col).lower().strip()
-        if any(re.search(pattern, col_lower, re.IGNORECASE) for pattern in roll_patterns):
-            return col
-    return None
-
-
-def find_roll_column(columns):
-    """Improved roll number detection with academic patterns"""
+    """Identify the roll number column using common patterns."""
     patterns = [
         r'university\s*roll',
         r'roll\s*no',
@@ -405,89 +369,142 @@ def find_roll_column(columns):
     return None
 
 def normalize_code(raw):
-    """Extract codes from any string format"""
-    # First try to find code in parentheses
-    code_match = re.search(r'\(([A-Z0-9-]+)\)', str(raw).upper())
-    if code_match:
-        base_code = code_match.group(1)
-    else:
-        base_code = str(raw).upper()
-    
-    # Clean special characters
-    return re.sub(r'[^A-Z0-9-]', '', base_code).strip('-')
-
-def check_preference_match(student, subject):
-    """Check if student originally chose this subject"""
-    return student.elective_selections.filter(subject=subject).exists()
-
-# Add to top
-from django.db import transaction
+    """Standardize subject codes by removing all spaces and underscores, preserving hyphens."""
+    if pd.isna(raw) or not str(raw).strip():
+        return None
+    code = str(raw).strip().upper()
+    code = re.sub(r'[\s_]+', '', code)
+    return code
 
 @staff_member_required
 @transaction.atomic
 def upload_allocation(request):
-    form = UploadAllocationForm()
-    
     if request.method == 'POST':
         form = UploadAllocationForm(request.POST, request.FILES)
         if form.is_valid():
-            try:
-                # Force delete existing allocations for testing
-                AllocationResult.objects.all().delete()
-                
-                semester = form.cleaned_data['semester']
-                df = pd.read_excel(
-                    request.FILES['allocation_file'],
-                    header=2,
-                    dtype=str
-                ).fillna('')
-                
-                # DEBUG: Print raw data
-                print("Raw Excel Data:")
-                print(df.to_dict(orient='records'))
-                
-                # Process allocations
-                allocations = []
-                for _, row in df.iterrows():
-                    try:
-                        student = Student.objects.get(
-                            roll=str(row['Roll No.']).strip(),
-                            semester=semester
-                        )
-                        # Process all other columns
-                        for col, value in row.items():
-                            if col == 'Roll No.': continue
-                            code = re.search(r'([A-Z]{3}-[A-Z]{2}\d+[A-Z]?)', str(value).upper())
-                            if code:
-                                subject = Subject.objects.get(
-                                    code__iexact=code.group(1).replace(" ", ""),
-                                    semester=int(semester)
-                                )
-                                allocations.append(
-                                    AllocationResult(
-                                        semester=semester,
-                                        student=student,
-                                        stream=subject.stream,
-                                        allocated_subject=subject
-                                    )
-                                )
-                    except Exception as e:
-                        print(f"Error: {str(e)}")
+            semester = form.cleaned_data['semester']
+            allocation_file = request.FILES['allocation_file']
 
-                # Force create allocations
+            try:
+                df = pd.read_excel(allocation_file, header=0, skiprows=[1, 2], dtype=str).fillna('')
+                df.columns = [col.strip() for col in df.columns]
+
+                logger.info("Columns: %s", df.columns.tolist())
+                logger.info("First 5 rows: %s", df.head(5).to_dict(orient='records'))
+
+                roll_col = find_roll_column(df.columns)
+                if roll_col is None:
+                    messages.error(request, "Could not find roll number column in the Excel file.")
+                    logger.error("No roll number column found.")
+                    return redirect('upload_allocation')
+
+                df = df[df[roll_col].str.strip().ne('') & ~df[roll_col].isna()]
+                if df.empty:
+                    messages.error(request, "No valid student data found in the Excel file.")
+                    logger.error("No valid student data found.")
+                    return redirect('upload_allocation')
+                logger.info("Number of student rows: %d", len(df))
+
+                elective_columns = [col for col in df.columns if 'elective' in col.lower()]
+                if not elective_columns:
+                    messages.error(request, "No elective columns found in the Excel file.")
+                    logger.error("No elective columns found.")
+                    return redirect('upload_allocation')
+                logger.info("Elective columns detected: %s", elective_columns)
+
+                students = Student.objects.filter(semester=semester)
+                student_map = {str(s.roll).strip(): s for s in students}
+                logger.info("Students fetched: %s", list(student_map.keys()))
+
+                subjects = Subject.objects.filter(semester=int(semester), is_elective=True)
+                subject_map = {normalize_code(s.code): s for s in subjects}
+                logger.info("Subjects fetched: %s", list(subject_map.keys()))
+
+                allocations = []
+                errors = []
+
+                for index, row in df.iterrows():
+                    roll = str(row[roll_col]).strip()
+                    student = student_map.get(roll)
+                    if not student:
+                        errors.append(f"Row {index+4}: Student roll {roll} not found for semester {semester}")
+                        logger.error("Student roll %s not found at row %d", roll, index+4)
+                        continue
+
+                    chosen_selections = ElectiveSelection.objects.filter(student=student).select_related('subject')
+                    chosen_by_stream = {sel.subject.stream: sel.subject for sel in chosen_selections}
+                    logger.info("Student %s chosen streams: %s", roll, list(chosen_by_stream.keys()))
+
+                    for col in elective_columns:
+                        cell_value = str(row[col]).strip()
+                        logger.info("Row %d, Col '%s': Cell value = '%s'", index+4, col, cell_value)
+                        if not cell_value:
+                            errors.append(f"Row {index+4}, Col '{col}': No subject code provided")
+                            logger.warning("No subject code in row %d, col '%s'", index+4, col)
+                            continue
+
+                        subject_code = normalize_code(cell_value)
+                        if not subject_code:
+                            errors.append(f"Row {index+4}, Col '{col}': Invalid subject code '{cell_value}'")
+                            logger.error("Invalid subject code '%s' in row %d, col '%s'", cell_value, index+4, col)
+                            continue
+
+                        allocated_subject = subject_map.get(subject_code)
+                        if not allocated_subject:
+                            errors.append(f"Row {index+4}, Col '{col}': Subject code '{subject_code}' not found in database")
+                            logger.error("Subject code '%s' not found in row %d, col '%s'", subject_code, index+4, col)
+                            continue
+
+                        stream = allocated_subject.stream
+                        logger.info("Allocated subject %s in stream %s (from code %s)", allocated_subject, stream, subject_code)
+
+                        chosen_subject = chosen_by_stream.get(stream)
+                        if chosen_subject is None:
+                            logger.warning("Student %s has no chosen subject for stream %s", roll, stream)
+
+                        is_match = chosen_subject and chosen_subject.code == allocated_subject.code
+
+                        allocations.append(
+                            AllocationResult(
+                                student=student,
+                                semester=semester,
+                                stream=stream,
+                                allocated_subject=allocated_subject,
+                                chosen_subject=chosen_subject,
+                                is_match=is_match
+                            )
+                        )
+                        logger.info("Allocation added for student %s, stream %s", roll, stream)
+
+                AllocationResult.objects.filter(semester=semester).delete()
+                logger.info("Cleared existing allocations for semester %s", semester)
+
                 AllocationResult.objects.bulk_create(allocations)
-                print(f"CREATED {len(allocations)} ALLOCATIONS")  # Debug line
-                
+                logger.info("Created %d allocations", len(allocations))
+
+                if errors:
+                    error_msg = f"Processed {len(allocations)} allocations with {len(errors)} errors: " + "; ".join(errors[:5])
+                    messages.warning(request, error_msg)
+                    logger.warning(error_msg)
+                else:
+                    messages.success(request, f"Successfully processed {len(allocations)} allocations")
+                    logger.info("All allocations processed successfully")
+
                 return redirect('allocation_results', semester=semester)
 
             except Exception as e:
-                messages.error(request, f"Error: {str(e)}")
+                messages.error(request, f"Error processing file: {str(e)}")
+                logger.exception("Processing error: %s", str(e))
                 return redirect('upload_allocation')
-    
+    else:
+        form = UploadAllocationForm()
+
     return render(request, 'core/upload_allocation.html', {'form': form})
+
+
 @login_required
 def allocation_results(request, semester):
     if not request.user.is_staff:
         return redirect('student_dashboard')
-    results = AllocationResult.objects.filter(semester=semester).select_related('student', 'chosen_subject', 'allocated_subject').order_by('student__roll', 'stream')
+    results = AllocationResult.objects.filter(semester=semester).select_related('student', 'allocated_subject').order_by('student__roll', 'stream')
     return render(request, 'core/allocation_results.html', {'results': results, 'semester': semester})
