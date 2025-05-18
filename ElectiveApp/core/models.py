@@ -81,7 +81,7 @@ class Student(models.Model):
         help_text=_("Plain-text password for initial login (temporary storage).")
     )
     roll = models.CharField(
-        max_length=10,
+        max_length=20,
         blank=True,
         unique=False,
         null=True,

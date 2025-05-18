@@ -20,7 +20,7 @@
                     {% endfor %}
                 </div>
             {% endif %}
-            <form method="POST" action="{% url 'select_department_semester' %}"class="space-y-4">
+            <form method="POST" action="{% url 'reselect_department_semester' %}"class="space-y-4">
                 {% csrf_token %}
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700">Department *</label>
