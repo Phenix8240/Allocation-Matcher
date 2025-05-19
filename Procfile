@@ -1,1 +1,1 @@
-web: gunicorn ElectiveApp.ElectiveApp.wsgi
+web: gunicorn ElectiveApp.ElectiveApp.wsgi --workers 3 --timeout 120
