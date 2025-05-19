@@ -61,7 +61,6 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-ALLOWED_HOSTS = ['allocation-matcher-production.up.railway.app', 'localhost', '127.0.0.1']
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ROOT_URLCONF = "ElectiveApp.urls"
