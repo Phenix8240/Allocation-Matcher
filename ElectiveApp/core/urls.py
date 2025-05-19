@@ -1,6 +1,7 @@
-from django.urls import path
 from . import views
-
+from django.urls import path
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.views.generic.base import RedirectView
 urlpatterns = [
     path('', views.login_view, name='login'),
     path('student-dashboard/', views.student_dashboard, name='student_dashboard'),
@@ -26,4 +27,5 @@ urlpatterns = [
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset-confirm/<uidb64>/<token>/', views.password_reset_confirm, name='password_reset_confirm'),
     path('delete-subject/<int:subject_id>/', views.delete_subject, name='delete_subject'),
+    path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('core/favicon.ico'))),
 ]

@@ -27,7 +27,11 @@ SECRET_KEY = "django-insecure-5u(2r&930paf5hv^)nyku*n9pb69#ge7q)*e@(dyn%141qgv-a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [    'allocation-matcher-1.onrender.com',
+    'localhost',
+    '127.0.0.1']
+
+CSRF_TRUSTED_ORIGINS = ['https://allocation-matcher-1.onrender.com']
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
