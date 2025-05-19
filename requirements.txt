@@ -19,6 +19,7 @@ cycler==0.12.1
 debugpy==1.8.13
 decorator==5.2.1
 defusedxml==0.7.1
+dj-database-url==2.3.0
 Django==5.2
 et_xmlfile==2.0.0
 executing==2.2.0
@@ -85,6 +86,7 @@ plotly==6.0.1
 prometheus_client==0.21.1
 prompt_toolkit==3.0.50
 psutil==7.0.0
+psycopg2-binary==2.9.10
 ptyprocess==0.7.0
 pure_eval==0.2.3
 pycparser==2.22
