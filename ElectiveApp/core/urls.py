@@ -3,6 +3,7 @@ from django.urls import path
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.views.generic.base import RedirectView
 urlpatterns = [
+    
     path('', views.login_view, name='login'),
     path('student-dashboard/', views.student_dashboard, name='student_dashboard'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),

@@ -7,6 +7,7 @@ def home(request):
     return HttpResponse("✅ Django server is running!")
 
 urlpatterns = [
-    path('', include('core.urls')),
+    path('', home),  # Root route handled directly
+    path('core/', include('core.urls')),
     path('admin/', admin.site.urls),
 ]
