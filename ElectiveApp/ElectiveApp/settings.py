@@ -27,15 +27,17 @@ SECRET_KEY = "django-insecure-5u(2r&930paf5hv^)nyku*n9pb69#ge7q)*e@(dyn%141qgv-a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [    'allocation-matcher-1.onrender.com',
-    'localhost',
-    '127.0.0.1']
+# ALLOWED_HOSTS = [    'allocation-matcher-1.onrender.com',
+#     'localhost',
+#     '127.0.0.1']
+# ALLOWED_HOSTS = [  'localhost',
+#     '127.0.0.1']
 
-CSRF_TRUSTED_ORIGINS = ['https://allocation-matcher-1.onrender.com']
+# CSRF_TRUSTED_ORIGINS = ['https://allocation-matcher-1.onrender.com']
 
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+# if RENDER_EXTERNAL_HOSTNAME:
+#     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
@@ -61,7 +63,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+# DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ROOT_URLCONF = "ElectiveApp.urls"
 

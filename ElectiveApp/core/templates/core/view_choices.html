@@ -3,6 +3,8 @@
     <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Elective Choices for Semester {{ semester }}</h2>
     {% if message %}
       <p class="text-gray-600 dark:text-gray-300">{{ message }}</p>
+    {% elif not data %}
+      <p class="text-gray-600 dark:text-gray-300">No data available to display.</p>
     {% else %}
       <div class="overflow-x-auto">
         <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -27,4 +29,4 @@
         </table>
       </div>
     {% endif %}
-  </div>
+</div>

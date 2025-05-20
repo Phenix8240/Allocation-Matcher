@@ -360,32 +360,44 @@ def view_choices(request, semester):
     try:
         semester_int = int(semester)
     except ValueError:
+        logger.error(f"Invalid semester value: {semester}")
         return HttpResponseBadRequest("Invalid semester")
 
-    students = Student.objects.filter(semester=semester, elective_finalized=True)
+    # Fetch students with finalized choices and valid roll numbers
+    students = Student.objects.filter(semester=semester, elective_finalized=True, roll__isnull=False)
+    logger.info(f"Found {students.count()} students with finalized choices for semester {semester}")
+
     if not students.exists():
+        logger.info(f"No students with finalized choices for semester {semester}")
         return render(request, 'core/view_choices.html', {
             'semester': semester,
             'message': 'No students have finalized choices for this semester.'
         })
 
+    # Fetch distinct streams for elective subjects
     streams = Subject.objects.filter(semester=semester_int, is_elective=True).values_list('stream', flat=True).distinct()
+    streams = list(streams)
+    logger.info(f"Streams for semester {semester}: {streams}")
 
     data = []
     for student in students:
         row = {'roll': student.roll}
         selections = {sel.subject.stream: f"{sel.subject.code} - {sel.subject.name}" 
                       for sel in student.elective_selections.all()}
+        logger.debug(f"Student {student.roll} selections: {selections}")
         for stream in streams:
             row[stream] = selections.get(stream, 'N/A')
         data.append(row)
+        logger.debug(f"Row for student {student.roll}: {row}")
 
     context = {
         'semester': semester,
         'streams': streams,
         'data': data,
     }
+    logger.info(f"Rendering view_choices with {len(data)} rows")
     return render(request, 'core/view_choices.html', context)
+
 
 @login_required
 def download_choices(request, semester):
