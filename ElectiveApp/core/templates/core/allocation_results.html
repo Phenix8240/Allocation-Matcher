@@ -1,33 +1,291 @@
-<div class="p-4">
-  <h2 class="text-2xl font-bold mb-4">Allocation Results for Semester {{ semester }}</h2>
-  <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow">
-    <thead>
-      <tr class="bg-gray-100 dark:bg-gray-700">
-        <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Roll No.</th>
-        <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Name</th>
-        <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Stream</th>
-        <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Chosen Subject</th>
-        <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Allocated Subject</th>
-        <th class="py-3 px-4 border-b text-left text-gray-900 dark:text-white">Match</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for result in results %}
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-          <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.student.roll }}</td>
-          <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.student.user.get_full_name }}</td>
-          <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.stream }}</td>
-          <td class="py-3 px-4 border-b text-gray-900 dark:text-white">
-            {% if result.chosen_subject %}{{ result.chosen_subject.code }} - {{ result.chosen_subject.name }}{% else %}Not chosen{% endif %}
-          </td>
-          <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.allocated_subject.code }} - {{ result.allocated_subject.name }}</td>
-          <td class="py-3 px-4 border-b text-gray-900 dark:text-white">{{ result.is_match|yesno:"Yes,No" }}</td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="6" class="py-3 px-4 text-center text-gray-500 dark:text-gray-400">No allocation results found.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allocation Results - Semester {{ semester }}</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --text-main: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-light: #f9fafb;
+            --border: #e5e7eb;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.5;
+            color: var(--text-main);
+            padding: 0;
+            margin: 0;
+            background-color: var(--bg-light);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background-color: white;
+            padding: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .semester-badge {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .results-count {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background-color: var(--bg-light);
+            text-align: left;
+            padding: 16px 20px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: var(--primary-light);
+        }
+        
+        .match-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .match-yes {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+        
+        .match-no {
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+        
+        .subject-code {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .not-chosen {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .empty-text {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a56d4;
+        }
+        
+        .btn-icon {
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            th, td {
+                padding: 12px 15px;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Student Allocation System</h1>
+            <div class="semester-badge">Semester {{ semester }}</div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Allocation Results</h2>
+                <div class="results-count">{{ results|length }} students processed</div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Roll No.</th>
+                        <th>Name</th>
+                        <th>Stream</th>
+                        <th>Chosen Subject</th>
+                        <th>Allocated Subject</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td>{{ result.student.roll }}</td>
+                        <td>{{ result.student.user.get_full_name }}</td>
+                        <td>{{ result.stream }}</td>
+                        <td>
+                            {% if result.chosen_subject %}
+                                <span class="subject-code">{{ result.chosen_subject.code }}</span> - {{ result.chosen_subject.name }}
+                            {% else %}
+                                <span class="not-chosen">Not chosen</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="subject-code">{{ result.allocated_subject.code }}</span> - {{ result.allocated_subject.name }}
+                        </td>
+                        <td>
+                            <span class="match-badge {% if result.is_match %}match-yes{% else %}match-no{% endif %}">
+                                {{ result.is_match|yesno:"Match,No Match" }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <div class="empty-text">No allocation results found</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary">
+                <span class="btn-icon">📥</span>
+                Download Results
+            </button>
+        </div>
+    </div>
+</body>
+</html>

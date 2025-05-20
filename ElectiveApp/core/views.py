@@ -442,10 +442,12 @@ def find_roll_column(columns):
     patterns = [
         r'university\s*roll',
         r'roll\s*no',
+        r'roll\s*number',
         r'registration\s*no',
         r'reg\s*no',
         r'student\s*id',
-        r'^\s*roll\s*$'
+        r'^\s*roll\s*$',
+        r'Roll\s*Number',
     ]
     for col in columns:
         if any(re.search(p, str(col), re.IGNORECASE) for p in patterns):

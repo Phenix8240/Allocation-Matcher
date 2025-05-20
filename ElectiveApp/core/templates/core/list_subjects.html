@@ -5,20 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}My App{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'pink': {
+                50: '#fdf2f8',
+                100: '#fce7f3',
+                200: '#fbcfe8',
+                300: '#f9a8d4',
+                400: '#f472b6',
+                500: '#ec4899',
+                600: '#db2777',
+                700: '#be185d',
+                800: '#9d174d',
+                900: '#831843',
+              },
+              'blue': {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 dark:bg-gray-900">
+<body class="bg-gradient-to-br from-pink-50 to-blue-50">
     {% block content %}
-    <div class="space-y-6 p-6">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">All Subjects</h2>
+    <div class="space-y-6 p-6 max-w-6xl mx-auto">
+      <div class="flex justify-between items-center">
+        <h2 class="text-3xl font-bold text-pink-800">All Subjects</h2>
+        <a href="#" class="text-blue-600 hover:text-blue-800 transition-colors bg-white/80 hover:bg-white px-4 py-2 rounded-full shadow-sm border border-blue-100">
+          <i class="fas fa-plus mr-1"></i> Add New Subject
+        </a>
+      </div>
       
       <!-- Debug Information -->
-      <p class="text-sm text-gray-500 dark:text-gray-400">{{ debug_info }}</p>
-    {% comment %} x {% endcomment %}
+      {% if debug_info %}
+      <div class="bg-blue-100/80 p-4 rounded-lg border border-blue-200 backdrop-blur-sm">
+        <p class="text-sm text-blue-800">{{ debug_info }}</p>
+      </div>
+      {% endif %}
+    
       <!-- Messages -->
       {% if messages %}
         {% for message in messages %}
-          <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200{% else %}bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200{% endif %}">
-            {{ message }}
+          <div class="p-4 mb-4 rounded-lg border {% if message.tags == 'success' %}bg-pink-100/80 text-pink-800 border-pink-200{% else %}bg-blue-100/80 text-blue-800 border-blue-200{% endif %} backdrop-blur-sm">
+            <div class="flex items-center">
+              <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+              {{ message }}
+            </div>
           </div>
         {% endfor %}
       {% endif %}
@@ -26,34 +73,52 @@
       {% if subjects %}
         {% regroup subjects by semester as semester_groups %}
         {% for group in semester_groups %}
-          <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Semester {{ group.grouper }}</h3>
+          <div class="bg-white/80 p-6 rounded-xl shadow-sm border border-pink-100 backdrop-blur-sm mb-6">
+            <h3 class="text-xl font-semibold text-pink-700 mb-4 flex items-center">
+              <span class="bg-gradient-to-r from-pink-500 to-blue-500 text-white px-3 py-1 rounded-full text-sm mr-3">Semester {{ group.grouper }}</span>
+            </h3>
             {% if group.list %}
-              <div class="grid grid-cols-1 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% for subject in group.list %}
-                  <div class="p-4 border rounded-lg flex justify-between items-center">
-                    <div>
-                      <h4 class="font-bold text-gray-800 dark:text-gray-200">{{ subject.code }}</h4>
-                      <p class="text-gray-700 dark:text-gray-300">{{ subject.name }}</p>
-                      <p class="text-sm text-gray-500 dark:text-gray-400">Stream: {{ subject.stream }}</p>
-                      <p class="text-sm {% if subject.is_elective %}text-green-600 dark:text-green-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">
-                        {{ subject.is_elective|yesno:"Elective,Core" }}
-                      </p>
+                  <div class="p-4 border rounded-lg hover:shadow-md transition-shadow bg-white/90 border-pink-100 flex justify-between items-start">
+                    <div class="flex-1">
+                      <div class="flex items-start">
+                        <div class="bg-gradient-to-br from-pink-400 to-blue-400 text-white p-2 rounded-lg mr-3">
+                          <i class="fas fa-book text-sm"></i>
+                        </div>
+                        <div>
+                          <h4 class="font-bold text-pink-900">{{ subject.code }}</h4>
+                          <p class="text-blue-900">{{ subject.name }}</p>
+                          <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="text-xs px-2 py-1 rounded-full bg-pink-100 text-pink-800">Stream: {{ subject.stream }}</span>
+                            <span class="text-xs px-2 py-1 rounded-full {% if subject.is_elective %}bg-blue-100 text-blue-800{% else %}bg-pink-100 text-pink-800{% endif %}">
+                              {{ subject.is_elective|yesno:"Elective,Core" }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <form method="post" action="{% url 'delete_subject' subject.id %}" onsubmit="return confirm('Are you sure you want to delete {{ subject.code }}? This action cannot be undone.');">
                       {% csrf_token %}
-                      <button type="submit" class="py-1 px-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition" title="Delete Subject">Delete</button>
+                      <button type="submit" class="py-1 px-3 bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium rounded-lg transition flex items-center" title="Delete Subject">
+                        <i class="fas fa-trash-alt text-sm mr-1"></i> Delete
+                      </button>
                     </form>
                   </div>
                 {% endfor %}
               </div>
             {% else %}
-              <p class="text-gray-600 dark:text-gray-300">No subjects found for Semester {{ group.grouper }}.</p>
+              <div class="p-4 text-center rounded-lg bg-pink-50/80">
+                <p class="text-pink-700">No subjects found for Semester {{ group.grouper }}.</p>
+              </div>
             {% endif %}
           </div>
         {% endfor %}
       {% else %}
-        <p class="text-gray-600 dark:text-gray-300">No subjects found in the database.</p>
+        <div class="bg-white/80 p-8 rounded-xl shadow-sm border border-pink-100 text-center backdrop-blur-sm">
+          <i class="fas fa-book-open text-4xl text-pink-300 mb-3"></i>
+          <p class="text-pink-700">No subjects found in the database.</p>
+        </div>
       {% endif %}
     </div>
     {% endblock %}
