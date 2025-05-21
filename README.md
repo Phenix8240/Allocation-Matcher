@@ -1,6 +1,7 @@
 🧠 Elective Matcher Portal
 🎓 A smart Django-powered portal for managing elective subject choices vs allocations — with automatic mismatch detection and dashboard views for both admins and students.
-
+link to the website: https://allocation-matcher-1.onrender.com/core
+Test mail id: electiveapp24@gmail.com || password: BQaAoLBz
 ✨ Key Features
 ✅ Feature	📋 Description
 📥 Student Elective Submission	Students log in and submit their preferred elective subjects
